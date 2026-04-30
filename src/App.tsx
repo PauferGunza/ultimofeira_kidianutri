@@ -862,66 +862,103 @@ export default function App() {
         {screen === 'capture' && (
           <motion.div 
             key="capture"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="flex flex-col h-screen pb-24 px-6 pt-12"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="flex flex-col h-screen bg-dark-bg overflow-y-auto pb-32"
           >
-            <header className="mb-8">
-              <button 
-                onClick={() => navigate('dashboard')}
-                className="w-10 h-10 bg-card-bg rounded-full flex items-center justify-center mb-6"
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <h1 className="text-4xl font-bold font-display mb-2">Analisar refeição</h1>
-              <p className="text-gray-400">Fotografa o teu prato para uma análise completa</p>
-            </header>
-
-            <div className="relative rounded-3xl overflow-hidden aspect-video mb-10 group">
-              <img 
-                src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1000&auto=format&fit=crop" 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                alt="Capture preview"
-              />
-              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center">
+            <div className="px-8 pt-12 mb-6">
+              <div className="flex justify-between items-center mb-6">
                 <button 
-                  onClick={() => navigate('result')}
-                  className="w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-2xl shadow-primary/40 mb-4 animate-pulse"
+                  onClick={() => navigate('dashboard')}
+                  className="w-10 h-10 bg-card-bg rounded-full flex items-center justify-center border border-gray-800"
                 >
-                  <Camera size={32} className="text-black" />
+                  <ArrowLeft size={20} />
                 </button>
-                <h3 className="text-xl font-bold">Fotografa o teu prato</h3>
-                <p className="text-center text-sm text-gray-300 max-w-[200px] mt-2">Aponta a câmara para a refeição e recebe a análise nutricional completa em segundos</p>
-                
-                <div className="flex gap-4 mt-8">
-                   <button className="flex items-center gap-2 px-6 py-3 bg-primary text-black rounded-full text-sm font-bold">
-                     <Camera size={18} /> Câmara
-                   </button>
-                   <button className="flex items-center gap-2 px-6 py-3 bg-[#d97706] text-black rounded-full text-sm font-bold">
-                     <ImageIcon size={18} /> Galeria
-                   </button>
+              </div>
+              <h1 className="text-3xl font-bold font-display mb-1">Analisar refeição</h1>
+              <p className="text-gray-500 text-sm">Fotografa o teu prato para uma análise completa</p>
+            </div>
+
+            <div className="px-6 mb-8">
+              <div className="relative h-64 rounded-[32px] overflow-hidden border border-gray-800">
+                <img 
+                  src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop" 
+                  className="w-full h-full object-cover opacity-60" 
+                  alt="Food background"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col items-center justify-center p-6 text-center">
+                  <div className="w-16 h-16 bg-primary/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 border border-primary/30">
+                    <Camera size={32} className="text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold font-display mb-1">Fotografa o teu prato</h3>
+                  <p className="text-xs text-gray-400 max-w-[200px]">Aponta a câmara para a refeição e recebe a análise nutricional completa em segundos</p>
+                  
+                  <div className="flex gap-3 mt-6">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-full text-xs font-bold shadow-lg">
+                      <Camera size={14} /> Câmara
+                    </button>
+                    <button className="flex items-center gap-2 px-4 py-2 bg-[#d97706] text-black rounded-full text-xs font-bold shadow-lg">
+                      <ImageIcon size={14} /> Galeria
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <h3 className="font-bold text-xl mb-6">Tipo de refeição</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {MEAL_TYPES.map((meal) => (
-                <button
-                  key={meal.id}
-                  className={`p-4 rounded-3xl text-left border transition-all ${
-                    meal.id === 'lunch' ? 'border-primary bg-primary/5' : 'border-gray-800 bg-card-bg'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <meal.icon size={20} className={meal.id === 'lunch' ? 'text-primary' : 'text-gray-500'} />
-                    {meal.id === 'lunch' && <Check size={18} className="text-primary bg-primary/10 rounded-full" />}
+            <div className="px-8 mb-8">
+              <h3 className="font-bold text-gray-400 text-xs mb-4 uppercase tracking-widest">Tipo de refeição</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {MEAL_TYPES.map((meal) => (
+                  <div 
+                    key={meal.id}
+                    className={`p-4 rounded-2xl border transition-all ${
+                      meal.id === 'lunch' ? 'bg-primary/5 border-primary' : 'bg-card-bg border-gray-800'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                       <meal.icon size={18} className={meal.id === 'lunch' ? 'text-primary' : 'text-gray-500'} />
+                       {meal.id === 'lunch' && <Check size={14} className="text-primary bg-primary/10 rounded-full" />}
+                    </div>
+                    <h4 className="font-bold text-sm">{meal.label}</h4>
+                    <p className="text-[10px] text-gray-400 mt-1">{meal.time}</p>
+                    <p className="text-[9px] text-gray-600 italic mt-1">Ex: {meal.ex}</p>
                   </div>
-                  <h4 className="font-bold mb-1">{meal.label}</h4>
-                  <p className="text-[10px] text-gray-500 mb-1">{meal.time}</p>
-                  <p className="text-[10px] text-gray-400 italic">Ex: {meal.ex}</p>
-                </button>
-              ))}
+                ))}
+              </div>
+            </div>
+
+            <div className="px-8 mb-8">
+               <h3 className="font-bold text-gray-400 text-xs mb-4 uppercase tracking-widest">Como obter a melhor análise</h3>
+               <div className="space-y-3">
+                  {[
+                    "Boa iluminação melhora muito a precisão",
+                    "Enquadra todo o prato na foto",
+                    "Evita sombras ou reflexos",
+                    "Funciona com pratos angolanos e internacionais"
+                  ].map((tip, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Check size={10} className="text-primary" />
+                      </div>
+                      <span className="text-xs text-gray-400">{tip}</span>
+                    </div>
+                  ))}
+               </div>
+            </div>
+
+            <div className="px-8 space-y-4">
+               <button 
+                onClick={() => navigate('result')}
+                className="w-full py-4 bg-primary text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+               >
+                 <Camera size={20} />
+                 Abrir câmara
+               </button>
+               <button className="w-full py-4 bg-gray-900 border border-primary/20 text-primary font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                 <FlaskConical size={18} />
+                 Identificar Produto Rapidamente
+               </button>
             </div>
 
             <BottomNav active="capture" onNavigate={navigate} />
