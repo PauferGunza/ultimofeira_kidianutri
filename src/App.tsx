@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 
 // --- Types ---
-type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'capture' | 'result' | 'login' | 'signup' | 'terms' | 'privacy';
+type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'capture' | 'result' | 'login' | 'signup' | 'terms' | 'privacy' | 'mealPlan' | 'community' | 'history' | 'profile_settings';
 
 interface Profile {
   id: string;
@@ -95,28 +95,36 @@ const ProgressBar = ({ progress, colorClass = "bg-primary" }: { progress: number
 const BottomNav = ({ active, onNavigate }: { active: string, onNavigate: (screen: Screen) => void }) => (
   <div className="fixed bottom-0 left-0 right-0 bg-[#0a0c10]/90 backdrop-blur-md border-t border-gray-800 px-6 py-4 flex justify-between items-center z-50">
     <button onClick={() => onNavigate('dashboard')} className={`flex flex-col items-center gap-1 ${active === 'dashboard' ? 'text-primary' : 'text-gray-500'}`}>
-      <span className="text-xs">Início</span>
-      {active === 'dashboard' && <div className="w-1 h-1 bg-primary rounded-full" />}
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active === 'dashboard' ? 'bg-primary/20' : ''}`}>
+        <Sun size={20} className={active === 'dashboard' ? 'text-primary' : 'text-gray-500'} />
+      </div>
+      <span className="text-[10px]">Início</span>
     </button>
-    <button className="flex flex-col items-center gap-1 text-gray-500">
-      <History size={20} />
+    <button onClick={() => onNavigate('history')} className={`flex flex-col items-center gap-1 ${active === 'history' ? 'text-primary' : 'text-gray-500'}`}>
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active === 'history' ? 'bg-primary/20' : ''}`}>
+        <History size={20} className={active === 'history' ? 'text-primary' : 'text-gray-500'} />
+      </div>
       <span className="text-[10px]">Histórico</span>
     </button>
     <div className="relative -mt-12">
       <button 
         onClick={() => onNavigate('capture')}
-        className="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/20 border-4 border-[#0a0c10]"
+        className="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/20 border-4 border-[#0a0c10] active:scale-90 transition-transform"
       >
         <Camera size={28} className="text-black" />
       </button>
     </div>
-    <button className="flex flex-col items-center gap-1 text-gray-500">
-      <Calendar size={20} />
+    <button onClick={() => onNavigate('mealPlan')} className={`flex flex-col items-center gap-1 ${active === 'mealPlan' ? 'text-primary' : 'text-gray-500'}`}>
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active === 'mealPlan' ? 'bg-primary/20' : ''}`}>
+        <Calendar size={20} className={active === 'mealPlan' ? 'text-primary' : 'text-gray-500'} />
+      </div>
       <span className="text-[10px]">Plano</span>
     </button>
-    <button className="flex flex-col items-center gap-1 text-gray-500">
-      <User size={20} />
-      <span className="text-[10px]">Perfil</span>
+    <button onClick={() => onNavigate('community')} className={`flex flex-col items-center gap-1 ${active === 'community' ? 'text-primary' : 'text-gray-500'}`}>
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active === 'community' ? 'bg-primary/20' : ''}`}>
+        <User size={20} className={active === 'community' ? 'text-primary' : 'text-gray-500'} />
+      </div>
+      <span className="text-[10px]">Nossa Terra</span>
     </button>
   </div>
 );
@@ -761,7 +769,7 @@ export default function App() {
                 <p className="text-gray-500">Sábado, 18 De Abril</p>
               </div>
               <div className="flex items-center gap-4">
-                <button onClick={handleLogout} className="text-gray-500 hover:text-red-500 transition-colors">
+                <button onClick={() => navigate('profile_settings')} className="text-gray-500 hover:text-primary transition-colors">
                   <User size={24} />
                 </button>
                 <div className="relative">
@@ -881,6 +889,364 @@ export default function App() {
             </section>
 
             <BottomNav active="dashboard" onNavigate={navigate} />
+          </motion.div>
+        )}
+
+        {/* --- History Screen --- */}
+        {screen === 'history' && (
+          <motion.div 
+            key="history"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col h-screen pb-24 overflow-y-auto"
+          >
+            <div className="px-8 pt-12 mb-8">
+              <h1 className="text-3xl font-bold font-display mb-1">Histórico</h1>
+              <p className="text-gray-500 text-sm">Tuas análises nutricionais passadas</p>
+            </div>
+
+            <div className="px-6 space-y-4">
+              {scansToday.length > 0 ? (
+                scansToday.map((scan) => (
+                  <div key={scan.id} className="bg-card-bg border border-gray-800 p-4 rounded-3xl flex items-center gap-4">
+                    <img 
+                      src={scan.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop"} 
+                      className="w-16 h-16 rounded-2xl object-cover" 
+                      alt={scan.item_name}
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm mb-0.5">{scan.item_name}</h4>
+                      <p className="text-[10px] text-gray-500 mb-2">{scan.date}</p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-primary">{scan.calories} kcal</span>
+                        <div className="flex items-center gap-1">
+                           <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                           <span className="text-[10px] text-gray-400">{scan.score_label}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-20">
+                  <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-800">
+                    <History size={32} className="text-gray-700" />
+                  </div>
+                  <p className="text-gray-500">Ainda não tens histórico de hoje.</p>
+                </div>
+              )}
+            </div>
+            <BottomNav active="history" onNavigate={navigate} />
+          </motion.div>
+        )}
+
+        {/* --- Meal Plan Screen --- */}
+        {screen === 'mealPlan' && (
+          <motion.div 
+            key="mealPlan"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col h-screen pb-24 overflow-y-auto"
+          >
+            <div className="px-8 pt-12 mb-6 flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold font-display mb-1">Plano alimentar</h1>
+                <p className="text-gray-500 text-sm italic">Manutenção · 2000 kcal/dia</p>
+              </div>
+              <button className="w-10 h-10 bg-primary/20 border border-primary/30 rounded-full flex items-center justify-center text-primary active:scale-95 transition-transform">
+                <Calendar size={20} />
+              </button>
+            </div>
+
+            <div className="flex gap-2 px-8 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+              {['Hoje', 'Amanhã', 'Depois'].map((day, i) => (
+                <button 
+                  key={day} 
+                  className={`px-8 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${i === 0 ? 'bg-primary text-black' : 'bg-gray-900 text-gray-500 border border-gray-800'}`}
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
+
+            <div className="px-8 mb-8">
+              <div className="bg-card-bg border border-gray-800 p-6 rounded-[32px]">
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                   <div className="text-center">
+                      <span className="block text-xl font-bold">1600</span>
+                      <span className="text-[9px] text-gray-500 uppercase tracking-widest">kcal no plano</span>
+                   </div>
+                   <div className="text-center">
+                      <span className="block text-xl font-bold">2000</span>
+                      <span className="text-[9px] text-gray-500 uppercase tracking-widest">kcal objectivo</span>
+                   </div>
+                   <div className="text-center">
+                      <span className="block text-xl font-bold text-red-500">-400</span>
+                      <span className="text-[9px] text-gray-500 uppercase tracking-widest">diferença</span>
+                   </div>
+                </div>
+                <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                   <div className="h-full bg-primary w-[80%] rounded-full shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-8 space-y-6">
+               <div className="flex flex-col gap-4">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                        <Sun size={16} className="text-orange-500" />
+                      </div>
+                      <h4 className="font-bold">Café da manhã</h4>
+                    </div>
+                    <span className="text-primary font-bold text-sm">280 kcal</span>
+                  </div>
+                  
+                  <div className="bg-card-bg border border-gray-800 rounded-3xl overflow-hidden group">
+                     <div className="p-4 flex gap-4">
+                        <img 
+                          src="https://images.unsplash.com/photo-1543339308-43e59d6b73a6?q=80&w=400&auto=format&fit=crop" 
+                          className="w-20 h-20 rounded-2xl object-cover" 
+                          alt="Meal"
+                        />
+                        <div className="flex-1">
+                           <h5 className="font-bold text-sm mb-1">Papaia com Mel</h5>
+                           <p className="text-[10px] text-gray-500 leading-relaxed">Papaia madura com uma colher de mel orgânico. Perfeito para digestão.</p>
+                           <div className="flex gap-2 mt-2">
+                             <span className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-bold rounded-full uppercase">Fibras</span>
+                             <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 text-[8px] font-bold rounded-full uppercase">Vitamina C</span>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="flex flex-col gap-4 pb-12">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                        <Sun size={16} className="text-primary" />
+                      </div>
+                      <h4 className="font-bold">Almoço</h4>
+                    </div>
+                    <span className="text-primary font-bold text-sm">620 kcal</span>
+                  </div>
+                  
+                  <div className="bg-card-bg border border-gray-800 rounded-3xl overflow-hidden group">
+                     <img 
+                      src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop" 
+                      className="w-full h-40 object-cover" 
+                      alt="Mufete"
+                    />
+                     <div className="p-4">
+                        <h5 className="font-bold text-base mb-1">Mufete Completo</h5>
+                        <p className="text-xs text-gray-500 leading-relaxed mb-4">Peixe grelhado (tilápia ou cacusso), funge de milho, feijão de óleo de palma e banana da terra. O prato mais nutritivo de Angola!</p>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {['Proteína', 'Ferro', 'Energia', 'Tradicional'].map(tag => (
+                             <span key={tag} className="px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold rounded-full">
+                               {tag}
+                             </span>
+                          ))}
+                        </div>
+                        <button className="w-full py-3 bg-primary text-black font-bold rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-primary/20">
+                          <Check size={16} /> Adicionar ao diário
+                        </button>
+                     </div>
+                  </div>
+               </div>
+            </div>
+            <BottomNav active="mealPlan" onNavigate={navigate} />
+          </motion.div>
+        )}
+
+        {/* --- Community Screen (Nossa Terra) --- */}
+        {screen === 'community' && (
+          <motion.div 
+            key="community"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col h-screen pb-24 overflow-y-auto"
+          >
+            <div className="px-8 pt-12 mb-6">
+              <div className="flex justify-between items-center mb-6">
+                 <h1 className="text-3xl font-bold font-display flex items-center gap-2">
+                   Nossa Terra 🌍
+                 </h1>
+                 <button className="w-10 h-10 bg-primary text-black rounded-xl flex items-center justify-center active:scale-95 transition-transform">
+                   <ChevronRight className="rotate-[-90deg]" size={20} />
+                 </button>
+              </div>
+              <p className="text-gray-500 text-sm mb-6">Receitas e dicas da comunidade angolana</p>
+              
+              <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+                {['Tudo', 'Receitas', 'Dicas', 'Desafios', 'Família'].map((cat, i) => (
+                  <button 
+                    key={cat} 
+                    className={`px-6 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${i === 0 ? 'bg-primary text-black' : 'bg-gray-900 text-gray-500 border border-gray-800'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="px-8 mb-8">
+               <div className="bg-primary/5 border-2 border-primary/20 p-4 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary">
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-primary">+2.400 angolanos a cuidar da saúde</h4>
+                      <p className="text-[10px] text-gray-400">A maior comunidade nutricional de Angola</p>
+                    </div>
+                  </div>
+               </div>
+            </div>
+
+            <div className="px-8 space-y-8 pb-12">
+               <div className="bg-card-bg border border-gray-800 rounded-3xl overflow-hidden">
+                  <div className="p-5 flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center text-gray-400 font-bold border border-gray-700">
+                        KN
+                     </div>
+                     <div>
+                        <div className="flex items-center gap-2">
+                           <h4 className="font-bold text-sm">Equipa Kidia Nutri</h4>
+                           <span className="px-2 py-0.5 bg-primary text-black text-[8px] font-bold rounded flex items-center gap-0.5">
+                             <Check size={8} /> Equipa
+                           </span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 flex items-center gap-1">
+                          📍 Luanda, Angola · 3d atrás
+                        </p>
+                     </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <img 
+                      src="https://images.unsplash.com/photo-1543339308-43e59d6b73a6?q=80&w=600&auto=format&fit=crop" 
+                      className="w-full h-64 object-cover" 
+                      alt="Post"
+                    />
+                    <div className="absolute top-4 left-4">
+                       <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-[10px] font-bold text-white flex items-center gap-2 border border-white/10">
+                          🍽️ Papaia com mel angolano
+                       </span>
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <p className="text-sm text-gray-300 leading-relaxed mb-4">
+                      A papaia é rica em vitamina C e enzimas digestivas. Com mel puro angolano, é o pequeno-almoço perfeito para começar o dia com energia e saúde! ☀️🍯
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-6">
+                       {['#Papaia', '#Mel', '#PequenoAlmoço', '#VitaminaC'].map(tag => (
+                          <span key={tag} className="text-primary font-bold text-[10px] bg-primary/5 px-2 py-0.5 rounded-md">
+                            {tag}
+                          </span>
+                       ))}
+                    </div>
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-800 text-gray-500">
+                       <div className="flex gap-6">
+                          <button className="flex items-center gap-2 text-xs hover:text-primary transition-colors">
+                            <Flame size={18} /> 157
+                          </button>
+                          <button className="flex items-center gap-2 text-xs hover:text-primary transition-colors">
+                            <History size={18} className="rotate-[-90deg]" /> 12
+                          </button>
+                       </div>
+                       <button className="hover:text-primary transition-colors">
+                          <ChevronRight size={20} />
+                       </button>
+                    </div>
+                  </div>
+               </div>
+            </div>
+            <BottomNav active="community" onNavigate={navigate} />
+          </motion.div>
+        )}
+
+        {/* --- Profile Settings Screen --- */}
+        {screen === 'profile_settings' && (
+          <motion.div 
+            key="profile_settings"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="flex flex-col h-screen pb-24 overflow-y-auto px-8 pt-12"
+          >
+            <div className="flex justify-between items-center mb-8">
+              <button 
+                onClick={() => navigate('dashboard')}
+                className="w-10 h-10 bg-card-bg rounded-full flex items-center justify-center border border-gray-800"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h1 className="text-xl font-bold font-display">O Meu Perfil</h1>
+              <div className="w-10" />
+            </div>
+
+            <div className="flex flex-col items-center mb-10">
+               <div className="relative mb-4">
+                  <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center text-4xl border-2 border-primary/40">
+                     {selectedProfile === 'me' ? '👦' : selectedProfile === 'child' ? '👶' : '👴'}
+                  </div>
+                  <button className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-2 border-dark-bg text-black">
+                     <Camera size={14} />
+                  </button>
+               </div>
+               <h2 className="text-2xl font-bold mb-1">{userProfile?.name || 'Utilizador'}</h2>
+               <p className="text-gray-500 text-sm">{userEmail}</p>
+            </div>
+
+            <div className="space-y-4 mb-10">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Objectivos e Preferências</h3>
+               <div className="bg-card-bg border border-gray-800 rounded-3xl p-4 space-y-4">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                     <span className="text-sm">Objectivo</span>
+                     <span className="text-primary font-bold text-sm">Comer saudável</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                     <span className="text-sm">Dieta</span>
+                     <span className="text-primary font-bold text-sm">Omnívora</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                     <span className="text-sm">Actividade</span>
+                     <span className="text-primary font-bold text-sm">Moderada</span>
+                  </div>
+               </div>
+            </div>
+
+            <div className="space-y-4">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Conta</h3>
+               <div className="bg-card-bg border border-gray-800 rounded-3xl overflow-hidden">
+                  <button className="w-full p-4 flex items-center justify-between border-b border-gray-800 hover:bg-white/5 transition-colors">
+                     <div className="flex items-center gap-3">
+                        <User size={18} className="text-gray-400" />
+                        <span className="text-sm">Editar Perfil</span>
+                     </div>
+                     <ChevronRight size={16} className="text-gray-600" />
+                  </button>
+                  <button className="w-full p-4 flex items-center justify-between border-b border-gray-800 hover:bg-white/5 transition-colors">
+                     <div className="flex items-center gap-3">
+                        <Bell size={18} className="text-gray-400" />
+                        <span className="text-sm">Notificações</span>
+                     </div>
+                     <ChevronRight size={16} className="text-gray-600" />
+                  </button>
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full p-4 flex items-center gap-3 text-red-500 hover:bg-red-500/5 transition-colors"
+                  >
+                     <Moon size={18} />
+                     <span className="text-sm font-bold">Terminar Sessão</span>
+                  </button>
+               </div>
+            </div>
+
+            <BottomNav active="profile_settings" onNavigate={navigate} />
           </motion.div>
         )}
 
