@@ -25,11 +25,15 @@ import {
   FlaskConical,
   Dumbbell,
   Bone,
-  Loader2
+  Loader2,
+  MessageSquare,
+  Send,
+  Sparkles
 } from 'lucide-react';
+import { sendMessageToAI, ChatMessage } from './services/chatService';
 
 // --- Types ---
-type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'capture' | 'result' | 'login' | 'signup' | 'terms' | 'privacy' | 'mealPlan' | 'community' | 'history' | 'profile_settings';
+type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'capture' | 'result' | 'login' | 'signup' | 'terms' | 'privacy' | 'mealPlan' | 'community' | 'history' | 'profile_settings' | 'chat';
 
 interface Profile {
   id: string;
@@ -124,7 +128,13 @@ const BottomNav = ({ active, onNavigate }: { active: string, onNavigate: (screen
       <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active === 'community' ? 'bg-primary/20' : ''}`}>
         <User size={20} className={active === 'community' ? 'text-primary' : 'text-gray-500'} />
       </div>
-      <span className="text-[10px]">Nossa Terra</span>
+      <span className="text-[10px]">Povo</span>
+    </button>
+    <button onClick={() => onNavigate('chat')} className={`flex flex-col items-center gap-1 ${active === 'chat' ? 'text-primary' : 'text-gray-500'}`}>
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active === 'chat' ? 'bg-primary/20' : ''}`}>
+        <MessageSquare size={20} className={active === 'chat' ? 'text-primary' : 'text-gray-500'} />
+      </div>
+      <span className="text-[10px]">Chat IA</span>
     </button>
   </div>
 );
@@ -146,6 +156,40 @@ export default function App() {
   const [analysisImageUrl, setAnalysisImageUrl] = useState<string | null>(null);
   const [selectedMealType, setSelectedMealType] = useState('lunch');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Chat states
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    { role: 'model', content: 'Olá! Sou o Kidia Nutri AI. Como posso ajudar na tua alimentação hoje?' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (screen === 'chat') {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, screen]);
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || isChatLoading) return;
+
+    const userMessage: ChatMessage = { role: 'user', content: chatInput };
+    const newMessages = [...chatMessages, userMessage];
+    setChatMessages(newMessages);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      const response = await sendMessageToAI(newMessages);
+      setChatMessages(prev => [...prev, { role: 'model', content: response }]);
+    } catch (err: any) {
+      console.error('Chat error:', err);
+      setChatMessages(prev => [...prev, { role: 'model', content: 'Desculpa, tive um problema ao processar a tua mensagem. Tenta novamente.' }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   // Form states
   const [email, setEmail] = useState('');
@@ -1263,6 +1307,82 @@ export default function App() {
                </div>
             </div>
             <BottomNav active="community" onNavigate={navigate} />
+          </motion.div>
+        )}
+
+        {/* --- Chat Assistant Screen --- */}
+        {screen === 'chat' && (
+          <motion.div 
+            key="chat"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="flex flex-col h-screen"
+          >
+            <div className="pt-12 px-8 mb-4">
+               <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold flex items-center gap-2">
+                       Chat IA <Sparkles className="text-primary fill-primary" size={24} />
+                    </h1>
+                    <p className="text-gray-500 text-sm italic">O teu assistente de nutrição 🇦🇴</p>
+                  </div>
+                  <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20">
+                     <div className="text-primary font-bold">KN</div>
+                  </div>
+               </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 space-y-4 py-4 scroll-smooth">
+              {chatMessages.map((msg, idx) => (
+                <motion.div 
+                  key={idx} 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div 
+                    className={`max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed ${
+                      msg.role === 'user' 
+                        ? 'bg-primary text-black font-medium rounded-tr-none shadow-lg shadow-primary/10' 
+                        : 'bg-card-bg border border-gray-800 text-white rounded-tl-none shadow-xl'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                </motion.div>
+              ))}
+              {isChatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-card-bg border border-gray-800 p-4 rounded-3xl rounded-tl-none flex items-center gap-2 text-gray-400 italic text-xs">
+                    <Loader2 size={14} className="animate-spin text-primary" /> Kidia está a pensar...
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            <div className="px-6 py-4 pb-28">
+               <div className="relative group">
+                  <input 
+                    type="text" 
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Pergunta sobre mufete, quizaca..."
+                    className="w-full bg-card-bg border border-gray-800 rounded-3xl px-6 py-4 pr-16 text-sm focus:border-primary outline-none transition-all shadow-2xl focus:ring-1 focus:ring-primary/20"
+                  />
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={!chatInput.trim() || isChatLoading}
+                    className="absolute right-2 top-2 bottom-2 w-12 bg-primary rounded-2xl flex items-center justify-center text-black active:scale-95 transition-transform disabled:opacity-50 disabled:grayscale"
+                  >
+                    <Send size={18} />
+                  </button>
+               </div>
+            </div>
+            
+            <BottomNav active="chat" onNavigate={navigate} />
           </motion.div>
         )}
 

@@ -22,6 +22,39 @@ const getAI = () => {
   return new GoogleGenAI({ apiKey: key });
 };
 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', environment: process.env.NODE_ENV });
+});
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensagens inválidas' });
+
+    const ai = getAI();
+    const systemPrompt = `Tu és o Kidia Nutri AI, um assistente virtual de nutrição especializado na saúde e culinária de Angola. 
+    REGRAS: Sê extremamente direto, conciso e prático. Responde em poucas palavras sempre que possível, focando em ingredientes locais de Angola. Sem textos longos ou enrolação.`;
+
+    const contents = [
+      { role: 'user', parts: [{ text: systemPrompt }] },
+      ...messages.map((m: any) => ({
+        role: m.role,
+        parts: [{ text: m.content }]
+      }))
+    ];
+
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents
+    });
+    
+    res.json({ text: result.text });
+  } catch (error: any) {
+    console.error('Erro no Chat IA:', error);
+    res.status(500).json({ error: error.message || 'Erro no chat do servidor' });
+  }
+});
+
 app.post('/api/analyze', async (req, res) => {
   try {
     const { base64Image } = req.body;
