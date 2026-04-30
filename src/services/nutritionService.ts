@@ -61,21 +61,21 @@ export const uploadAndAnalyze = async (
 ): Promise<{ analysis: NutritionAnalysis; imageUrl: string }> => {
   // 1. Upload to Supabase Storage
   const fileExt = file.name.split('.').pop();
-  const fileName = `${userId}/${Math.random()}.${fileExt}`;
-  const filePath = `meals/${fileName}`;
+  const fileName = `${userId}/${Date.now()}.${fileExt}`;
+  const filePath = `${fileName}`; // Uploading to bucket root
 
-  const { error: uploadError, data } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from('meals')
     .upload(filePath, file);
 
-  if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}`);
+  if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}. Certifica-te que o bucket 'meals' existe.`);
 
   // Get Public URL
   const { data: { publicUrl } } = supabase.storage.from('meals').getPublicUrl(filePath);
 
   // 2. Convert to Base64 for Gemini
-  const reader = new FileReader();
   const base64Promise = new Promise<string>((resolve) => {
+    const reader = new FileReader();
     reader.onload = () => {
       const base64 = (reader.result as string).split(',')[1];
       resolve(base64);
@@ -87,7 +87,10 @@ export const uploadAndAnalyze = async (
   // 3. Analyze with Gemini
   const analysis = await analyzeImage(base64Image);
 
-  // 4. Save to scan_history
+  return { analysis, imageUrl: publicUrl };
+};
+
+export const saveMealToHistory = async (userId: string, analysis: NutritionAnalysis, imageUrl: string) => {
   const { error: dbError } = await supabase.from('scan_history').insert([
     {
       user_id: userId,
@@ -101,11 +104,9 @@ export const uploadAndAnalyze = async (
       score: analysis.score,
       score_label: analysis.score_label,
       recommendation: analysis.recommendation,
-      image_url: publicUrl
+      image_url: imageUrl
     }
   ]);
 
   if (dbError) throw new Error(`Erro ao salvar no banco: ${dbError.message}`);
-
-  return { analysis, imageUrl: publicUrl };
 };

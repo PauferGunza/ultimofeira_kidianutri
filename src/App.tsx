@@ -6,7 +6,7 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
-import { uploadAndAnalyze, NutritionAnalysis } from './services/nutritionService';
+import { uploadAndAnalyze, saveMealToHistory, NutritionAnalysis } from './services/nutritionService';
 import { 
   ChevronRight, 
   Flame, 
@@ -136,6 +136,7 @@ export default function App() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<NutritionAnalysis | null>(null);
   const [analysisImageUrl, setAnalysisImageUrl] = useState<string | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState('lunch');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
@@ -958,20 +959,21 @@ export default function App() {
               <h3 className="font-bold text-gray-400 text-xs mb-4 uppercase tracking-widest">Tipo de refeição</h3>
               <div className="grid grid-cols-2 gap-4">
                 {MEAL_TYPES.map((meal) => (
-                  <div 
+                  <button 
                     key={meal.id}
-                    className={`p-4 rounded-2xl border transition-all ${
-                      meal.id === 'lunch' ? 'bg-primary/5 border-primary' : 'bg-card-bg border-gray-800'
+                    onClick={() => setSelectedMealType(meal.id)}
+                    className={`p-4 rounded-2xl border transition-all text-left ${
+                      selectedMealType === meal.id ? 'bg-primary/5 border-primary' : 'bg-card-bg border-gray-800'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
-                       <meal.icon size={18} className={meal.id === 'lunch' ? 'text-primary' : 'text-gray-500'} />
-                       {meal.id === 'lunch' && <Check size={14} className="text-primary bg-primary/10 rounded-full" />}
+                       <meal.icon size={18} className={selectedMealType === meal.id ? 'text-primary' : 'text-gray-500'} />
+                       {selectedMealType === meal.id && <Check size={14} className="text-primary bg-primary/10 rounded-full" />}
                     </div>
                     <h4 className="font-bold text-sm">{meal.label}</h4>
                     <p className="text-[10px] text-gray-400 mt-1">{meal.time}</p>
                     <p className="text-[9px] text-gray-600 italic mt-1">Ex: {meal.ex}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -1078,10 +1080,30 @@ export default function App() {
 
               <div className="flex gap-4">
                  <button 
-                  onClick={() => navigate('dashboard')}
-                  className="flex-1 py-4 bg-primary text-black font-extrabold rounded-full active:scale-95 transition-transform flex items-center justify-center"
+                  onClick={async () => {
+                    if (!session || !analysisResult || !analysisImageUrl) return;
+                    setLoading(true);
+                    try {
+                      await saveMealToHistory(session.user.id, analysisResult, analysisImageUrl);
+                      await fetchUserData(session.user.id);
+                      navigate('dashboard');
+                    } catch (err: any) {
+                      setErrorMessage('Erro ao guardar: ' + err.message);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading}
+                  className="flex-1 py-4 bg-primary text-black font-extrabold rounded-full active:scale-95 transition-transform flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                 >
-                   Finalizar
+                   {loading ? <Loader2 className="animate-spin" /> : <Check size={20} />}
+                   {loading ? 'A guardar...' : 'Adicionar ao Diário'}
+                 </button>
+                 <button 
+                  onClick={() => navigate('dashboard')}
+                  className="flex-1 py-4 bg-transparent border-2 border-primary text-primary font-bold rounded-full active:scale-95 transition-transform"
+                >
+                   Sair
                  </button>
               </div>
             </div>
