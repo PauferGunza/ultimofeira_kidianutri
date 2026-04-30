@@ -40,7 +40,7 @@ interface Profile {
 const ONBOARDING_STEPS = [
   {
     title: "Comer bem com o que tens na mesa 🍽️",
-    desc: "O NutriLens é o teu guia nutricional pessoal, criado para te ajudar a comer melhor com o que tens na mesa, prevenindo problemas como a anemia e fortalecendo a tua saúde.",
+    desc: "O Kidia Nutri é o teu guia nutricional pessoal, criado para te ajudar a comer melhor com o que tens na mesa, prevenindo problemas como a anemia e fortalecendo a tua saúde.",
     image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop",
     tag: "A NOSSA MISSÃO",
     tagColor: "text-[#d97706] bg-[#d97706]/20 border-[#d97706]/30"
@@ -319,7 +319,7 @@ export default function App() {
                 <div className="inline-block px-4 py-1.5 border border-primary text-primary rounded-full text-[10px] font-bold tracking-widest uppercase font-display mb-6">
                   Nutrição Personalizada
                 </div>
-                <h1 className="text-5xl font-bold font-display mb-4 text-white">NutriLens</h1>
+                <h1 className="text-5xl font-bold font-display mb-4 text-white">Kidia Nutri</h1>
                 <p className="text-gray-400 text-base leading-relaxed mb-10 max-w-[90%]">
                   O teu guia nutricional pessoal. Fotografa qualquer prato e descobre tudo sobre a tua alimentação.
                 </p>
@@ -563,7 +563,7 @@ export default function App() {
                   {termsAccepted && <Check size={14} className="text-black" />}
                 </button>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Ao criar uma conta, aceito os <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('terms')}>Termos de Uso</span> e a <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('privacy')}>Política de Privacidade</span> do NutriLens.
+                  Ao criar uma conta, aceito os <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('terms')}>Termos de Uso</span> e a <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('privacy')}>Política de Privacidade</span> do Kidia Nutri.
                 </p>
               </div>
 
@@ -605,7 +605,7 @@ export default function App() {
             <div className="prose prose-invert max-w-none text-gray-400 text-sm space-y-6 pb-12">
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">1. Aceitação dos Termos</h3>
-                <p>Ao utilizar o NutriLens, você concorda em cumprir e ficar vinculado a estes termos. O NutriLens é um guia nutricional baseado em IA e não substitui o aconselhamento médico profissional.</p>
+                <p>Ao utilizar o Kidia Nutri, você concorda em cumprir e ficar vinculado a estes termos. O Kidia Nutri é um guia nutricional baseado em IA e não substitui o aconselhamento médico profissional.</p>
               </section>
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">2. Uso do Serviço</h3>
@@ -617,7 +617,7 @@ export default function App() {
               </section>
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">4. Propriedade Intelectual</h3>
-                <p>Todo o conteúdo do aplicativo, incluindo logotipos e algoritmos, é propriedade exclusiva do NutriLens.</p>
+                <p>Todo o conteúdo do aplicativo, incluindo logotipos e algoritmos, é propriedade exclusiva do Kidia Nutri.</p>
               </section>
             </div>
           </motion.div>
