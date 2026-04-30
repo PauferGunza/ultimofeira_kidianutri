@@ -1,3 +1,4 @@
+import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from "../lib/supabase";
 
 export interface NutritionAnalysis {
@@ -13,18 +14,52 @@ export interface NutritionAnalysis {
 }
 
 export const analyzeImage = async (base64Image: string): Promise<NutritionAnalysis> => {
-  const response = await fetch('/api/analyze', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ base64Image })
-  });
+  // Hybrid logic: In AI Studio preview, call from frontend.
+  // In production (Vercel), call from backend.
+  const isDev = window.location.hostname.includes('googleusercontent.com') || 
+                window.location.hostname.includes('run.app') ||
+                window.location.hostname === 'localhost' ||
+                window.location.hostname.includes('ais-') ||
+                window.location.hostname.includes('aisstudio');
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Falha na análise da IA');
+  if (isDev) {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+    
+    const prompt = `Analise esta imagem de uma refeição e forneça os detalhes nutricionais em formato JSON. 
+    Seja o mais preciso possível para um guia de saúde em Angola.
+    Retorne um objeto com os campos: item_name (texto), calories (número), protein (número em g), carbs (número em g), fat (número em g), fiber (número em g), score (0-100), score_label (ex: Saudável, Moderado, Atenção), recommendation (uma frase curta de conselho).`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType: "image/jpeg", data: base64Image } }
+        ]
+      }],
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const resultText = response.text;
+    const cleanedJson = resultText.replace(/```json|```/g, '').trim();
+    return JSON.parse(cleanedJson);
+  } else {
+    // Production (Vercel): Use secure backend route
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64Image })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Falha na análise da IA');
+    }
+
+    return response.json();
   }
-
-  return response.json();
 };
 
 export const uploadAndAnalyze = async (

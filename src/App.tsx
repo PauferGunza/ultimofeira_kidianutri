@@ -908,15 +908,36 @@ export default function App() {
             <div className="px-6 space-y-4">
               {scansToday.length > 0 ? (
                 scansToday.map((scan) => (
-                  <div key={scan.id} className="bg-card-bg border border-gray-800 p-4 rounded-3xl flex items-center gap-4">
+                  <button 
+                    key={scan.id} 
+                    onClick={() => {
+                      setAnalysisResult({
+                        item_name: scan.item_name,
+                        calories: scan.calories,
+                        protein: scan.protein,
+                        carbs: scan.carbs,
+                        fat: scan.fat,
+                        fiber: scan.fiber,
+                        score: scan.score,
+                        score_label: scan.score_label,
+                        recommendation: scan.recommendation
+                      });
+                      setAnalysisImageUrl(scan.image_url);
+                      navigate('result');
+                    }}
+                    className="w-full bg-card-bg border border-gray-800 p-4 rounded-3xl flex items-center gap-4 text-left active:scale-95 transition-transform"
+                  >
                     <img 
                       src={scan.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop"} 
                       className="w-16 h-16 rounded-2xl object-cover" 
                       alt={scan.item_name}
                     />
                     <div className="flex-1">
-                      <h4 className="font-bold text-sm mb-0.5">{scan.item_name}</h4>
-                      <p className="text-[10px] text-gray-500 mb-2">{scan.date}</p>
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-bold text-sm mb-0.5">{scan.item_name}</h4>
+                        <ChevronRight size={14} className="text-gray-600" />
+                      </div>
+                      <p className="text-[10px] text-gray-500 mb-2">{new Date(scan.created_at || scan.date).toLocaleDateString()}</p>
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold text-primary">{scan.calories} kcal</span>
                         <div className="flex items-center gap-1">
@@ -925,7 +946,7 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))
               ) : (
                 <div className="text-center py-20">
@@ -1049,8 +1070,34 @@ export default function App() {
                              </span>
                           ))}
                         </div>
-                        <button className="w-full py-3 bg-primary text-black font-bold rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-primary/20">
-                          <Check size={16} /> Adicionar ao diário
+                        <button 
+                          onClick={async () => {
+                            if (!session) return;
+                            setLoading(true);
+                            try {
+                              const planMeal = {
+                                item_name: "Mufete Completo",
+                                calories: 620,
+                                protein: 45,
+                                carbs: 65,
+                                fat: 22,
+                                fiber: 12,
+                                score: 95,
+                                score_label: "Excelente",
+                                recommendation: "Excelente escolha tradicional e completa."
+                              };
+                              await saveMealToHistory(session.user.id, planMeal, "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop");
+                              await fetchUserData(session.user.id);
+                              navigate('dashboard');
+                            } catch (err: any) {
+                              setErrorMessage('Erro: ' + err.message);
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
+                          className="w-full py-3 bg-primary text-black font-bold rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+                        >
+                          <Check size={16} /> {loading ? 'A adicionar...' : 'Adicionar ao diário'}
                         </button>
                      </div>
                   </div>
@@ -1106,9 +1153,10 @@ export default function App() {
             </div>
 
             <div className="px-8 space-y-8 pb-12">
+               {/* Community Post 1 */}
                <div className="bg-card-bg border border-gray-800 rounded-3xl overflow-hidden">
                   <div className="p-5 flex items-center gap-3">
-                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center text-gray-400 font-bold border border-gray-700">
+                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30">
                         KN
                      </div>
                      <div>
@@ -1151,15 +1199,65 @@ export default function App() {
                     <div className="flex justify-between items-center pt-4 border-t border-gray-800 text-gray-500">
                        <div className="flex gap-6">
                           <button className="flex items-center gap-2 text-xs hover:text-primary transition-colors">
-                            <Flame size={18} /> 157
+                            <Flame size={18} className="text-orange-500" /> 157
                           </button>
                           <button className="flex items-center gap-2 text-xs hover:text-primary transition-colors">
                             <History size={18} className="rotate-[-90deg]" /> 12
                           </button>
                        </div>
-                       <button className="hover:text-primary transition-colors">
-                          <ChevronRight size={20} />
-                       </button>
+                    </div>
+                  </div>
+               </div>
+
+               {/* Community Post 2 */}
+               <div className="bg-card-bg border border-gray-800 rounded-3xl overflow-hidden">
+                  <div className="p-5 flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center text-white font-bold border border-gray-700">
+                        AM
+                     </div>
+                     <div>
+                        <div className="flex items-center gap-2">
+                           <h4 className="font-bold text-sm">António Manuel</h4>
+                        </div>
+                        <p className="text-[10px] text-gray-500 flex items-center gap-1">
+                          📍 Benguela, Angola · 5h atrás
+                        </p>
+                     </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <img 
+                      src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop" 
+                      className="w-full h-64 object-cover" 
+                      alt="Post"
+                    />
+                    <div className="absolute top-4 left-4">
+                       <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-[10px] font-bold text-white flex items-center gap-2 border border-white/10">
+                          💪 Almoço de Campeão
+                       </span>
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <p className="text-sm text-gray-300 leading-relaxed mb-4">
+                      Hoje o Mufete estava especial! Muita proteína e energia para o treino de logo. Kidia Nutri ajudou-me a equilibrar as porções. 🇦🇴
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-6">
+                       {['#Mufete', '#Treino', '#AngolaSaudavel'].map(tag => (
+                          <span key={tag} className="text-primary font-bold text-[10px] bg-primary/5 px-2 py-0.5 rounded-md">
+                            {tag}
+                          </span>
+                       ))}
+                    </div>
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-800 text-gray-500">
+                       <div className="flex gap-6">
+                          <button className="flex items-center gap-2 text-xs hover:text-primary transition-colors">
+                            <Flame size={18} /> 42
+                          </button>
+                          <button className="flex items-center gap-2 text-xs hover:text-primary transition-colors">
+                            <History size={18} className="rotate-[-90deg]" /> 3
+                          </button>
+                       </div>
                     </div>
                   </div>
                </div>
