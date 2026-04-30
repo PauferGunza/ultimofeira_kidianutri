@@ -13,7 +13,8 @@ export const sendMessageToAI = async (messages: ChatMessage[]): Promise<string> 
                 window.location.hostname.includes('aisstudio');
 
   if (isDev) {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+    const key = process.env.GEMINI_API_KEY || (process.env as any).KEY_API || '';
+    const ai = new GoogleGenAI({ apiKey: key });
     
     // System instruction to guide the AI as a nutrition assistant in Angola
     const systemPrompt = `Tu és o Kidia Nutri AI, um assistente virtual de nutrição especializado na saúde e culinária de Angola. 
@@ -34,7 +35,7 @@ export const sendMessageToAI = async (messages: ChatMessage[]): Promise<string> 
     ];
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents
     });
 

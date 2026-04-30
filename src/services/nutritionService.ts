@@ -23,14 +23,15 @@ export const analyzeImage = async (base64Image: string): Promise<NutritionAnalys
                 window.location.hostname.includes('aisstudio');
 
   if (isDev) {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+    const key = process.env.GEMINI_API_KEY || (process.env as any).KEY_API || '';
+    const ai = new GoogleGenAI({ apiKey: key });
     
     const prompt = `Analise esta imagem de uma refeição e forneça os detalhes nutricionais em formato JSON. 
     Seja o mais preciso possível para um guia de saúde em Angola.
     Retorne um objeto com os campos: item_name (texto), calories (número), protein (número em g), carbs (número em g), fat (número em g), fiber (número em g), score (0-100), score_label (ex: Saudável, Moderado, Atenção), recommendation (uma frase curta de conselho).`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: [{
         parts: [
           { text: prompt },
