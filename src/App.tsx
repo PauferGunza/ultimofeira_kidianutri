@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from './lib/supabase';
 import { 
   ChevronRight, 
   Flame, 
@@ -22,11 +23,12 @@ import {
   Lightbulb,
   FlaskConical,
   Dumbbell,
-  Bone
+  Bone,
+  Loader2
 } from 'lucide-react';
 
 // --- Types ---
-type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'capture' | 'result' | 'login' | 'signup';
+type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'capture' | 'result' | 'login' | 'signup' | 'terms' | 'privacy';
 
 interface Profile {
   id: string;
@@ -124,9 +126,139 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('welcome');
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState('Paufer');
+  const [userEmail, setUserEmail] = useState('');
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [scansToday, setScansToday] = useState<any[]>([]);
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const navigate = (next: Screen) => setScreen(next);
+  // Form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+
+  const fetchUserData = async (userId: string) => {
+    try {
+      // Fetch Profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (profile) setUserProfile(profile);
+
+      // Fetch Scans for today
+      const today = new Date().toISOString().split('T')[0];
+      const { data: scans } = await supabase
+        .from('scan_history')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', today);
+      
+      if (scans) setScansToday(scans);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+    }
+  };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        setUserEmail(session.user.email || '');
+        fetchUserData(session.user.id);
+        setScreen('dashboard');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        setUserEmail(session.user.email || '');
+        fetchUserData(session.user.id);
+        setScreen('dashboard');
+      } else {
+        setScreen('welcome');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const navigate = (next: Screen) => {
+    setErrorMessage('');
+    setScreen(next);
+  };
+
+  const handleSignUp = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage('');
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: fullName,
+          profile_type: selectedProfile,
+        }
+      }
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
+    } else if (data.user) {
+      // Create profile record using the exact fields from your SQL
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          { 
+            id: data.user.id, 
+            email: email, 
+            name: fullName, 
+            profile_type: selectedProfile || 'self',
+            daily_calorie_target: 2000,
+            is_onboarded: true
+          }
+        ]);
+      
+      if (profileError) console.error('Error creating profile:', profileError);
+      
+      if (data.session) {
+        navigate('dashboard');
+      } else {
+        setErrorMessage('Conta criada! Por favor, verifica o teu e-mail para confirmar.');
+      }
+    }
+    setLoading(false);
+  };
+
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage('');
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
+    } else {
+      navigate('dashboard');
+    }
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('welcome');
+  };
 
   const nextOnboardingStep = () => {
     if (onboardingStep < ONBOARDING_STEPS.length - 1) {
@@ -295,11 +427,19 @@ export default function App() {
             <h1 className="text-4xl font-bold font-display mb-2">Bem-vindo de volta!</h1>
             <p className="text-gray-500 mb-10 text-lg">Faz login para continuar a cuidar da tua saúde.</p>
             
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); navigate('dashboard'); }}>
+            {errorMessage && (
+              <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-2xl mb-6 text-sm">
+                {errorMessage}
+              </div>
+            )}
+
+            <form className="space-y-6" onSubmit={handleLogin}>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-400 ml-1">E-mail</label>
                 <input 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="exemplo@email.com"
                   className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
                   required
@@ -310,6 +450,8 @@ export default function App() {
                 <label className="text-sm font-bold text-gray-400 ml-1">Palavra-passe</label>
                 <input 
                   type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
                   required
@@ -319,9 +461,10 @@ export default function App() {
 
               <button 
                 type="submit"
-                className="w-full py-4 bg-primary text-black font-extrabold rounded-full text-lg shadow-lg shadow-primary/20 mt-4 active:scale-95 transition-transform"
+                disabled={loading}
+                className="w-full py-4 bg-primary text-black font-extrabold rounded-full text-lg shadow-lg shadow-primary/20 mt-4 active:scale-95 transition-transform flex items-center justify-center gap-2"
               >
-                Entrar
+                {loading ? <Loader2 className="animate-spin" /> : 'Entrar'}
               </button>
             </form>
 
@@ -352,11 +495,19 @@ export default function App() {
             <h1 className="text-4xl font-bold font-display mb-2">Cria a tua conta</h1>
             <p className="text-gray-500 mb-10 text-lg">Começa hoje a tua jornada para uma vida mais saudável.</p>
             
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); navigate('dashboard'); }}>
+            {errorMessage && (
+              <div className={`p-4 rounded-2xl mb-6 text-sm ${errorMessage.includes('confirmar') ? 'bg-primary/10 border border-primary/50 text-white' : 'bg-red-500/10 border border-red-500/50 text-red-500'}`}>
+                {errorMessage}
+              </div>
+            )}
+
+            <form className="space-y-6" onSubmit={handleSignUp}>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-400 ml-1">Nome completo</label>
                 <input 
                   type="text" 
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   placeholder="O teu nome"
                   className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
                   required
@@ -367,6 +518,8 @@ export default function App() {
                 <label className="text-sm font-bold text-gray-400 ml-1">E-mail</label>
                 <input 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="exemplo@email.com"
                   className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
                   required
@@ -377,6 +530,8 @@ export default function App() {
                 <label className="text-sm font-bold text-gray-400 ml-1">Palavra-passe</label>
                 <input 
                   type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 8 caracteres"
                   className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
                   required
@@ -384,19 +539,28 @@ export default function App() {
               </div>
 
               <div className="flex items-start gap-3 px-1">
-                <div className="flex items-center justify-center w-5 h-5 rounded border border-gray-700 bg-card-bg mt-0.5 shrink-0">
-                  <Check size={12} className="text-primary" />
-                </div>
-                <p className="text-xs text-gray-500 leading-tight">
-                  Ao criar uma conta, aceito os <span className="text-primary font-medium">Termos de Uso</span> e a <span className="text-primary font-medium">Política de Privacidade</span> do NutriLens.
+                <button 
+                  type="button"
+                  onClick={() => setTermsAccepted(!termsAccepted)}
+                  className={`flex items-center justify-center w-6 h-6 rounded border transition-colors mt-0.5 shrink-0 ${termsAccepted ? 'bg-primary border-primary' : 'bg-card-bg border-gray-700'}`}
+                >
+                  {termsAccepted && <Check size={14} className="text-black" />}
+                </button>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Ao criar uma conta, aceito os <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('terms')}>Termos de Uso</span> e a <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('privacy')}>Política de Privacidade</span> do NutriLens.
                 </p>
               </div>
 
               <button 
                 type="submit"
-                className="w-full py-4 bg-primary text-black font-extrabold rounded-full text-lg shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+                disabled={loading || !termsAccepted}
+                className={`w-full py-4 font-extrabold rounded-full text-lg shadow-lg flex items-center justify-center gap-2 transition-all ${
+                  loading || !termsAccepted 
+                  ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
+                  : 'bg-primary text-black shadow-primary/20 active:scale-95'
+                }`}
               >
-                Registar conta
+                {loading ? <Loader2 className="animate-spin" /> : 'Registar conta'}
               </button>
             </form>
 
@@ -404,6 +568,76 @@ export default function App() {
               <p className="text-gray-500 text-sm">
                 Já tens conta? <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('login')}>Faz login</span>
               </p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* --- Terms of Use Screen --- */}
+        {screen === 'terms' && (
+          <motion.div 
+            key="terms"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="flex flex-col h-screen px-8 pt-12 overflow-y-auto bg-dark-bg"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold font-display">Termos de Uso</h2>
+              <button onClick={() => navigate('signup')} className="text-gray-500 font-bold">Fechar</button>
+            </div>
+            
+            <div className="prose prose-invert max-w-none text-gray-400 text-sm space-y-6 pb-12">
+              <section>
+                <h3 className="text-white font-bold text-lg mb-2">1. Aceitação dos Termos</h3>
+                <p>Ao utilizar o NutriLens, você concorda em cumprir e ficar vinculado a estes termos. O NutriLens é um guia nutricional baseado em IA e não substitui o aconselhamento médico profissional.</p>
+              </section>
+              <section>
+                <h3 className="text-white font-bold text-lg mb-2">2. Uso do Serviço</h3>
+                <p>Você é responsável por manter a confidencialidade de sua conta. O serviço deve ser utilizado apenas para fins lícitos e de acordo com as leis de Angola e internacionais aplicáveis.</p>
+              </section>
+              <section>
+                <h3 className="text-white font-bold text-lg mb-2">3. Limitação de Responsabilidade</h3>
+                <p>As análises nutricionais são estimativas geradas por inteligência artificial. Sempre consulte um nutricionista ou médico antes de fazer mudanças significativas em sua dieta.</p>
+              </section>
+              <section>
+                <h3 className="text-white font-bold text-lg mb-2">4. Propriedade Intelectual</h3>
+                <p>Todo o conteúdo do aplicativo, incluindo logotipos e algoritmos, é propriedade exclusiva do NutriLens.</p>
+              </section>
+            </div>
+          </motion.div>
+        )}
+
+        {/* --- Privacy Policy Screen --- */}
+        {screen === 'privacy' && (
+          <motion.div 
+            key="privacy"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="flex flex-col h-screen px-8 pt-12 overflow-y-auto bg-dark-bg"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold font-display">Privacidade</h2>
+              <button onClick={() => navigate('signup')} className="text-gray-500 font-bold">Fechar</button>
+            </div>
+            
+            <div className="prose prose-invert max-w-none text-gray-400 text-sm space-y-6 pb-12">
+              <section>
+                <h3 className="text-white font-bold text-lg mb-2">1. Coleta de Dados</h3>
+                <p>Coletamos seu nome, e-mail e fotos de refeições para processar a análise nutricional. Para personalizar o serviço, também coletamos dados de perfil como idade e objetivos.</p>
+              </section>
+              <section>
+                <h3 className="text-white font-bold text-lg mb-2">2. Uso de Imagens</h3>
+                <p>As fotos dos pratos são processadas pela nossa IA para identificar alimentos e não são compartilhadas com terceiros fora do escopo funcional do serviço.</p>
+              </section>
+              <section>
+                <h3 className="text-white font-bold text-lg mb-2">3. Segurança</h3>
+                <p>Utilizamos tecnologias de ponta e protocolos de segurança para garantir que seus dados pessoais permaneçam protegidos contra acesso não autorizado.</p>
+              </section>
+              <section>
+                <h3 className="text-white font-bold text-lg mb-2">4. Seus Direitos</h3>
+                <p>Você pode solicitar a exclusão de sua conta e de todos os seus dados a qualquer momento diretamente nas configurações do seu perfil.</p>
+              </section>
             </div>
           </motion.div>
         )}
@@ -480,13 +714,18 @@ export default function App() {
             <header className="flex justify-between items-start mb-8">
               <div>
                 <h2 className="text-3xl font-bold font-display leading-tight flex items-center gap-2">
-                  Olá, {userEmail} 👋
+                  Olá, {userProfile?.name || userEmail.split('@')[0]} 👋
                 </h2>
                 <p className="text-gray-500">Sábado, 18 De Abril</p>
               </div>
-              <div className="relative">
-                <Bell size={24} className="text-gray-400" />
-                <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-dark-bg" />
+              <div className="flex items-center gap-4">
+                <button onClick={handleLogout} className="text-gray-500 hover:text-red-500 transition-colors">
+                  <User size={24} />
+                </button>
+                <div className="relative">
+                  <Bell size={24} className="text-gray-400" />
+                  <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-dark-bg" />
+                </div>
               </div>
             </header>
 
@@ -494,7 +733,7 @@ export default function App() {
               <div className="flex items-center gap-3">
                 <Flame className="text-orange-500" fill="currentColor" size={28} />
                 <div>
-                  <h4 className="font-bold text-sm">7 Dias Seguidos Cuidando de Ti</h4>
+                  <h4 className="font-bold text-sm">{userProfile?.current_streak || 0} Dias Seguidos Cuidando de Ti</h4>
                   <p className="text-xs text-primary">Continua assim — és incrível!</p>
                 </div>
               </div>
@@ -503,11 +742,13 @@ export default function App() {
 
             <div className="grid grid-cols-3 gap-3 mb-8">
               <div className="bg-card-bg p-4 rounded-2xl text-center flex flex-col items-center">
-                <span className="text-2xl font-bold font-display">2</span>
+                <span className="text-2xl font-bold font-display">{scansToday.length}</span>
                 <span className="text-[10px] text-gray-500 flex items-center gap-1 mt-1">🍽️ Refeições</span>
               </div>
               <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl text-center flex flex-col items-center">
-                <span className="text-2xl font-bold font-display text-primary">0</span>
+                <span className="text-2xl font-bold font-display text-primary">
+                  {scansToday.reduce((acc, s) => acc + (Number(s.calories) || 0), 0).toFixed(0)}
+                </span>
                 <span className="text-[10px] text-primary flex items-center gap-1 mt-1">🔥 kcal hoje</span>
               </div>
               <div className="bg-card-bg p-4 rounded-2xl text-center flex flex-col items-center">
@@ -522,36 +763,49 @@ export default function App() {
             <section className="bg-card-bg p-6 rounded-3xl mb-8 border border-gray-800">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-lg">Calorias hoje</h3>
-                <span className="text-gray-500 text-sm font-display">0 / 2000 kcal</span>
+                <span className="text-gray-500 text-sm font-display">
+                  {scansToday.reduce((acc, s) => acc + (Number(s.calories) || 0), 0).toFixed(0)} / {userProfile?.daily_calorie_target || 2000} kcal
+                </span>
               </div>
               <div className="w-full h-3 bg-gray-900 rounded-full mb-8">
-                <div className="w-2 h-full bg-primary rounded-full blur-[1px]" />
+                <div 
+                  className="h-full bg-primary rounded-full blur-[1px] transition-all duration-500" 
+                  style={{ width: `${Math.min(100, (scansToday.reduce((acc, s) => acc + (Number(s.calories) || 0), 0) / (userProfile?.daily_calorie_target || 2000)) * 100)}%` }}
+                />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 border border-primary/30 rounded-xl relative overflow-hidden">
                   <div className="absolute top-3 left-3 w-1.5 h-1.5 rounded-full bg-primary" />
                   <span className="block text-[10px] text-primary font-bold ml-4 mb-2">Proteína</span>
-                  <span className="text-xl font-bold font-display">62g</span>
-                  <ProgressBar progress={45} />
+                  <span className="text-xl font-bold font-display">
+                    {scansToday.reduce((acc, s) => acc + (Number(s.protein) || 0), 0).toFixed(0)}g
+                  </span>
+                  <ProgressBar progress={Math.min(100, scansToday.reduce((acc, s) => acc + Number(s.protein), 0))} />
                 </div>
                 <div className="p-3 border border-orange-500/30 rounded-xl relative overflow-hidden">
                   <div className="absolute top-3 left-3 w-1.5 h-1.5 rounded-full bg-orange-500" />
                   <span className="block text-[10px] text-orange-500 font-bold ml-4 mb-2">Carbs</span>
-                  <span className="text-xl font-bold font-display">138g</span>
-                  <ProgressBar progress={60} colorClass="bg-orange-500" />
+                  <span className="text-xl font-bold font-display">
+                    {scansToday.reduce((acc, s) => acc + (Number(s.carbs) || 0), 0).toFixed(0)}g
+                  </span>
+                  <ProgressBar progress={Math.min(100, scansToday.reduce((acc, s) => acc + Number(s.carbs), 0) / 2)} colorClass="bg-orange-500" />
                 </div>
                 <div className="p-3 border border-blue-500/30 rounded-xl relative overflow-hidden">
                   <div className="absolute top-3 left-3 w-1.5 h-1.5 rounded-full bg-blue-500" />
                   <span className="block text-[10px] text-blue-500 font-bold ml-4 mb-2">Gordura</span>
-                  <span className="text-xl font-bold font-display">48g</span>
-                  <ProgressBar progress={30} colorClass="bg-blue-500" />
+                  <span className="text-xl font-bold font-display">
+                    {scansToday.reduce((acc, s) => acc + (Number(s.fat) || 0), 0).toFixed(0)}g
+                  </span>
+                  <ProgressBar progress={Math.min(100, scansToday.reduce((acc, s) => acc + Number(s.fat), 0))} colorClass="bg-blue-500" />
                 </div>
                 <div className="p-3 border border-purple-500/30 rounded-xl relative overflow-hidden">
                   <div className="absolute top-3 left-3 w-1.5 h-1.5 rounded-full bg-purple-500" />
                   <span className="block text-[10px] text-purple-500 font-bold ml-4 mb-2">Fibras</span>
-                  <span className="text-xl font-bold font-display">18g</span>
-                  <ProgressBar progress={20} colorClass="bg-purple-500" />
+                  <span className="text-xl font-bold font-display">
+                    {scansToday.reduce((acc, s) => acc + (Number(s.fiber) || 0), 0).toFixed(0)}g
+                  </span>
+                  <ProgressBar progress={Math.min(100, scansToday.reduce((acc, s) => acc + Number(s.fiber), 0) * 2)} colorClass="bg-purple-500" />
                 </div>
               </div>
             </section>
@@ -750,10 +1004,42 @@ export default function App() {
 
               <div className="flex gap-4">
                  <button 
-                  onClick={() => navigate('dashboard')}
-                  className="flex-1 py-4 bg-primary text-black font-bold rounded-full active:scale-95 transition-transform"
+                  onClick={async () => {
+                    if (!session) return;
+                    setLoading(true);
+                    try {
+                      const { error } = await supabase
+                        .from('scan_history')
+                        .insert([
+                          {
+                            user_id: session.user.id,
+                            date: new Date().toISOString().split('T')[0],
+                            item_name: 'Salmão com Salada',
+                            calories: 542,
+                            protein: 35,
+                            carbs: 20,
+                            fat: 22,
+                            fiber: 8,
+                            score: 92,
+                            score_label: 'Saúde',
+                            image_url: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1000&auto=format&fit=crop'
+                          }
+                        ]);
+                      
+                      if (error) throw error;
+                      await fetchUserData(session.user.id);
+                      navigate('dashboard');
+                    } catch (err) {
+                      console.error('Error saving scan:', err);
+                      setErrorMessage('Erro ao guardar refeição.');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading}
+                  className="flex-1 py-4 bg-primary text-black font-bold rounded-full active:scale-95 transition-transform flex items-center justify-center"
                 >
-                   Adicionar ao Diário
+                   {loading ? <Loader2 className="animate-spin" /> : 'Adicionar ao Diário'}
                  </button>
                  <button className="flex-1 py-4 bg-transparent border-2 border-[#d97706] text-[#d97706] font-bold rounded-full active:scale-95 transition-transform">
                    Editar Ingredientes
