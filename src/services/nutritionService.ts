@@ -1,7 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from "../lib/supabase";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export interface NutritionAnalysis {
   item_name: string;
@@ -16,43 +13,18 @@ export interface NutritionAnalysis {
 }
 
 export const analyzeImage = async (base64Image: string): Promise<NutritionAnalysis> => {
-  const model = "gemini-3-flash-preview";
-  
-  const prompt = `Analise esta imagem de uma refeição e forneça os detalhes nutricionais em formato JSON. 
-  Seja o mais preciso possível para um guia de saúde em Angola.
-  Retorne um objeto com os campos: item_name (texto), calories (número), protein (número em g), carbs (número em g), fat (número em g), fiber (número em g), score (0-100), score_label (ex: Saudável, Moderado, Atenção), recommendation (uma frase curta de conselho).`;
-
-  const response = await ai.models.generateContent({
-    model,
-    contents: [
-      {
-        parts: [
-          { text: prompt },
-          { inlineData: { mimeType: "image/jpeg", data: base64Image } }
-        ]
-      }
-    ],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          item_name: { type: Type.STRING },
-          calories: { type: Type.NUMBER },
-          protein: { type: Type.NUMBER },
-          carbs: { type: Type.NUMBER },
-          fat: { type: Type.NUMBER },
-          fiber: { type: Type.NUMBER },
-          score: { type: Type.NUMBER },
-          score_label: { type: Type.STRING },
-          recommendation: { type: Type.STRING }
-        },
-        required: ["item_name", "calories", "protein", "carbs", "fat", "fiber", "score", "score_label", "recommendation"]
-      }
-    }
+  const response = await fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ base64Image })
   });
 
-  return JSON.parse(response.text);
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Falha na análise da IA');
+  }
+
+  return response.json();
 };
 
 export const uploadAndAnalyze = async (
