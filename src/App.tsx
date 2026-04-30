@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
+import { uploadAndAnalyze, NutritionAnalysis } from './services/nutritionService';
 import { 
   ChevronRight, 
   Flame, 
@@ -133,6 +134,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<NutritionAnalysis | null>(null);
+  const [analysisImageUrl, setAnalysisImageUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
   const [email, setEmail] = useState('');
@@ -197,6 +201,27 @@ export default function App() {
   const navigate = (next: Screen) => {
     setErrorMessage('');
     setScreen(next);
+  };
+
+  const handleFileSelect = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file || !session) return;
+
+    setLoading(true);
+    setErrorMessage('');
+    
+    try {
+      const { analysis, imageUrl } = await uploadAndAnalyze(file, session.user.id);
+      setAnalysisResult(analysis);
+      setAnalysisImageUrl(imageUrl);
+      await fetchUserData(session.user.id); // Refresh dashboard stats
+      navigate('result');
+    } catch (err: any) {
+      console.error('Analysis error:', err);
+      setErrorMessage(`Erro na análise: ${err.message}. Verifica se o bucket 'meals' existe no Supabase.`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignUp = async (e: FormEvent) => {
@@ -881,6 +906,14 @@ export default function App() {
             </div>
 
             <div className="px-6 mb-8">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileSelect} 
+                accept="image/*" 
+                capture="environment"
+                className="hidden" 
+              />
               <div className="relative h-64 rounded-[32px] overflow-hidden border border-gray-800">
                 <img 
                   src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop" 
@@ -889,19 +922,34 @@ export default function App() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col items-center justify-center p-6 text-center">
                   <div className="w-16 h-16 bg-primary/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 border border-primary/30">
-                    <Camera size={32} className="text-primary" />
+                    {loading ? <Loader2 size={32} className="text-primary animate-spin" /> : <Camera size={32} className="text-primary" />}
                   </div>
-                  <h3 className="text-xl font-bold font-display mb-1">Fotografa o teu prato</h3>
-                  <p className="text-xs text-gray-400 max-w-[200px]">Aponta a câmara para a refeição e recebe a análise nutricional completa em segundos</p>
+                  <h3 className="text-xl font-bold font-display mb-1">{loading ? 'A analisar...' : 'Fotografa o teu prato'}</h3>
+                  <p className="text-xs text-gray-400 max-w-[200px]">
+                    {loading ? 'A nossa equipa está a identificar os nutrientes. Aguarda um momento.' : 'Aponta a câmara para a refeição e recebe a análise nutricional completa em segundos'}
+                  </p>
                   
-                  <div className="flex gap-3 mt-6">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-full text-xs font-bold shadow-lg">
-                      <Camera size={14} /> Câmara
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-[#d97706] text-black rounded-full text-xs font-bold shadow-lg">
-                      <ImageIcon size={14} /> Galeria
-                    </button>
-                  </div>
+                  {!loading && (
+                    <div className="flex gap-3 mt-6">
+                      <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-full text-xs font-bold shadow-lg"
+                      >
+                        <Camera size={14} /> Câmara
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (fileInputRef.current) {
+                            fileInputRef.current.removeAttribute('capture');
+                            fileInputRef.current.click();
+                          }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-[#d97706] text-black rounded-full text-xs font-bold shadow-lg"
+                      >
+                        <ImageIcon size={14} /> Galeria
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -949,11 +997,12 @@ export default function App() {
 
             <div className="px-8 space-y-4">
                <button 
-                onClick={() => navigate('result')}
-                className="w-full py-4 bg-primary text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                className="w-full py-4 bg-primary text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-transform disabled:opacity-50"
                >
-                 <Camera size={20} />
-                 Abrir câmara
+                 {loading ? <Loader2 className="animate-spin" /> : <Camera size={20} />}
+                 {loading ? 'Analisando...' : 'Abrir câmara'}
                </button>
                <button className="w-full py-4 bg-gray-900 border border-primary/20 text-primary font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
                  <FlaskConical size={18} />
@@ -987,62 +1036,34 @@ export default function App() {
             <div className="px-6 pb-24">
               <div className="relative rounded-3xl overflow-hidden mb-8 shadow-2xl">
                 <img 
-                  src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1000&auto=format&fit=crop" 
+                  src={analysisImageUrl || "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1000&auto=format&fit=crop"} 
                   alt="Result meal" 
                   className="w-full aspect-square object-cover"
                 />
                 <div className="absolute top-4 right-4 bg-primary/20 backdrop-blur-md border border-primary/30 px-3 py-1.5 rounded-full flex items-center gap-2">
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  <span className="text-xs font-bold text-primary">92% Saúde</span>
+                  <span className="text-xs font-bold text-primary">{analysisResult?.score || 0}% {analysisResult?.score_label || 'Saúde'}</span>
                 </div>
                 
                 <div className="absolute bottom-0 inset-x-0 p-8 bg-gradient-to-t from-black/90 to-transparent flex flex-col items-center text-center">
-                   <h3 className="text-5xl font-bold font-display mb-1">542 kcal</h3>
-                   <span className="text-gray-400 font-medium font-display tracking-wide uppercase text-sm">Total Calorias</span>
+                   <h3 className="text-4xl font-bold font-display mb-1">{analysisResult?.item_name || 'Analisando'}</h3>
+                   <span className="text-primary font-bold text-2xl font-display">{analysisResult?.calories || 0} kcal</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-4 gap-2 mb-10">
                 {[
-                  { l: 'Protein', v: '35g', c: 'border-primary text-primary', i: Dumbbell },
-                  { l: 'Carbs', v: '20g', c: 'border-orange-500 text-orange-500', i: Flame },
-                  { l: 'Fat', v: '22g', c: 'border-blue-500 text-blue-500', i: FlaskConical },
-                  { l: 'Fiber', v: '8g', c: 'border-purple-500 text-purple-500', i: Bone },
+                  { l: 'Protein', v: `${analysisResult?.protein || 0}g`, c: 'border-primary text-primary', i: Dumbbell },
+                  { l: 'Carbs', v: `${analysisResult?.carbs || 0}g`, c: 'border-orange-500 text-orange-500', i: Flame },
+                  { l: 'Fat', v: `${analysisResult?.fat || 0}g`, c: 'border-blue-500 text-blue-500', i: FlaskConical },
+                  { l: 'Fiber', v: `${analysisResult?.fiber || 0}g`, c: 'border-purple-500 text-purple-500', i: Bone },
                 ].map((m) => (
                   <div key={m.l} className={`p-3 rounded-2xl border bg-card-bg flex flex-col items-center text-center ${m.c.split(' ')[0]}`}>
                     <div className="flex items-center gap-1 mb-2">
                       <span className="text-[8px] font-bold uppercase tracking-tighter text-gray-400">{m.l}</span>
                       <m.i size={10} className={m.c.split(' ')[1]} />
                     </div>
-                    <span className="text-lg font-bold font-display">{m.v}</span>
-                  </div>
-                ))}
-              </div>
-
-              <h4 className="font-bold text-xl mb-6 flex items-center gap-2">
-                <FlaskConical size={20} className="text-primary" />
-                Micro-nutrientes
-              </h4>
-              <div className="space-y-6 mb-10">
-                {[
-                  { label: 'Vitamina A', val: 85, color: 'bg-primary' },
-                  { label: 'Ferro', val: 70, color: 'bg-orange-500' },
-                  { label: 'Cálcio', val: 60, color: 'bg-blue-500' },
-                ].map((micro) => (
-                  <div key={micro.label}>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-400">{micro.label}</span>
-                      <span className="font-bold">{micro.val}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
-                       <motion.div 
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${micro.val}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        className={`h-full ${micro.color} rounded-full`} 
-                       />
-                    </div>
+                    <span className="text-base font-bold font-display">{m.v}</span>
                   </div>
                 ))}
               </div>
@@ -1050,52 +1071,17 @@ export default function App() {
               <div className="bg-[#d97706]/10 border-2 border-[#d97706]/30 p-6 rounded-3xl mb-12 relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-1 h-full bg-[#d97706]" />
                  <h4 className="text-[#d97706] font-bold text-lg mb-2">Sugestão do Nutricionista</h4>
-                 <p className="text-sm text-gray-300 leading-relaxed">
-                   Excelente equilíbrio de macronutrientes! Continue incluindo gorduras saudáveis como o abacate para otimizar a absorção de vitaminas. Considere adicionar sementes para mais fibra.
+                 <p className="text-sm text-gray-300 leading-relaxed italic">
+                   "{analysisResult?.recommendation || 'Carregando conselho...'}"
                  </p>
               </div>
 
               <div className="flex gap-4">
                  <button 
-                  onClick={async () => {
-                    if (!supabase || !session) return;
-                    setLoading(true);
-                    try {
-                      const { error } = await supabase
-                        .from('scan_history')
-                        .insert([
-                          {
-                            user_id: session.user.id,
-                            date: new Date().toISOString().split('T')[0],
-                            item_name: 'Salmão com Salada',
-                            calories: 542,
-                            protein: 35,
-                            carbs: 20,
-                            fat: 22,
-                            fiber: 8,
-                            score: 92,
-                            score_label: 'Saúde',
-                            image_url: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1000&auto=format&fit=crop'
-                          }
-                        ]);
-                      
-                      if (error) throw error;
-                      await fetchUserData(session.user.id);
-                      navigate('dashboard');
-                    } catch (err) {
-                      console.error('Error saving scan:', err);
-                      setErrorMessage('Erro ao guardar refeição.');
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  disabled={loading}
-                  className="flex-1 py-4 bg-primary text-black font-bold rounded-full active:scale-95 transition-transform flex items-center justify-center"
+                  onClick={() => navigate('dashboard')}
+                  className="flex-1 py-4 bg-primary text-black font-extrabold rounded-full active:scale-95 transition-transform flex items-center justify-center"
                 >
-                   {loading ? <Loader2 className="animate-spin" /> : 'Adicionar ao Diário'}
-                 </button>
-                 <button className="flex-1 py-4 bg-transparent border-2 border-[#d97706] text-[#d97706] font-bold rounded-full active:scale-95 transition-transform">
-                   Editar Ingredientes
+                   Finalizar
                  </button>
               </div>
             </div>
