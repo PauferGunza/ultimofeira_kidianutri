@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 // --- Types ---
-type Screen = 'welcome' | 'mission' | 'profile' | 'dashboard' | 'capture' | 'result';
+type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'capture' | 'result' | 'login' | 'signup';
 
 interface Profile {
   id: string;
@@ -34,6 +34,34 @@ interface Profile {
   desc: string;
   emoji: string;
 }
+
+const ONBOARDING_STEPS = [
+  {
+    title: "Comer bem com o que tens na mesa 🍽️",
+    desc: "O NutriLens é o teu guia nutricional pessoal, criado para te ajudar a comer melhor com o que tens na mesa, prevenindo problemas como a anemia e fortalecendo a tua saúde.",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop",
+    tag: "A NOSSA MISSÃO",
+    tagColor: "text-[#d97706] bg-[#d97706]/20 border-[#d97706]/30"
+  },
+  {
+    title: "Fotografa qualquer refeição",
+    desc: "Usa a câmara ou galeria para analisar pratos angolanos e internacionais. A nossa equipa identifica os ingredientes e os nutrientes de forma instantânea.",
+    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1000&auto=format&fit=crop",
+    icon: Camera
+  },
+  {
+    title: "Análise nutricional completa",
+    desc: "Recebe calorias, proteínas, ferro, vitaminas e minerais. Sabe se o prato é bom contra a anemia, se é adequado para diabetes ou hipertensão.",
+    image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1000&auto=format&fit=crop",
+    icon: Flame
+  },
+  {
+    title: "Plano alimentar personalizado",
+    desc: "Recebe sugestões de refeições angolanas e internacionais para cada momento do dia, baseadas nos teus objectivos e condições de saúde.",
+    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=1000&auto=format&fit=crop",
+    icon: Calendar
+  }
+];
 
 const PROFILES: Profile[] = [
   { id: 'me', label: 'Para Mim', desc: 'Quero ter mais energia, controlar o peso e viver com saúde.', emoji: '👦' },
@@ -94,10 +122,27 @@ const BottomNav = ({ active, onNavigate }: { active: string, onNavigate: (screen
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('welcome');
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState('Paufer');
 
   const navigate = (next: Screen) => setScreen(next);
+
+  const nextOnboardingStep = () => {
+    if (onboardingStep < ONBOARDING_STEPS.length - 1) {
+      setOnboardingStep(prev => prev + 1);
+    } else {
+      navigate('profile');
+    }
+  };
+
+  const prevOnboardingStep = () => {
+    if (onboardingStep > 0) {
+      setOnboardingStep(prev => prev - 1);
+    } else {
+      navigate('welcome');
+    }
+  };
 
   return (
     <div className="min-h-screen max-w-md mx-auto relative overflow-hidden bg-dark-bg text-white shadow-2xl">
@@ -134,7 +179,7 @@ export default function App() {
 
               <div className="w-full space-y-4 mt-auto pb-12">
                 <button 
-                  onClick={() => navigate('mission')}
+                  onClick={() => { setOnboardingStep(0); navigate('onboarding'); }}
                   className="w-full py-4 bg-primary text-black font-extrabold rounded-full flex items-center justify-center gap-2 text-lg active:scale-95 transition-all shadow-lg shadow-primary/20"
                 >
                   Começar a jornada <ChevronRight size={20} />
@@ -151,48 +196,214 @@ export default function App() {
                 </button>
 
                 <p className="text-center text-sm text-gray-400 pt-2">
-                  Já tenho conta — <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('dashboard')}>Entrar</span>
+                  Já tenho conta — <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('login')}>Entrar</span>
                 </p>
               </div>
             </div>
           </motion.div>
         )}
 
-        {/* --- Mission Screen --- */}
-        {screen === 'mission' && (
+        {/* --- Onboarding Screens --- */}
+        {screen === 'onboarding' && (() => {
+          const step = ONBOARDING_STEPS[onboardingStep];
+          const Icon = step.icon;
+          
+          return (
+            <motion.div 
+              key={`onboarding-${onboardingStep}`}
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -100, opacity: 0 }}
+              className="flex flex-col h-screen bg-black overflow-y-auto"
+            >
+              <div className="relative shrink-0 h-[55%]">
+                <img 
+                  src={step.image} 
+                  alt="Onboarding" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-dark-bg to-transparent" />
+                
+                <button 
+                  onClick={prevOnboardingStep}
+                  className="absolute top-12 left-6 w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/10"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+              </div>
+              
+              <div className="flex-1 bg-dark-bg px-8 pt-10 rounded-t-[40px] -mt-12 relative z-10 flex flex-col items-center">
+                <div className="w-full">
+                  {step.tag ? (
+                    <div className={`inline-block px-4 py-1.5 border rounded-full text-[10px] font-bold tracking-widest uppercase font-display mb-6 ${step.tagColor}`}>
+                      {step.tag}
+                    </div>
+                  ) : Icon ? (
+                    <div className="w-10 h-10 bg-primary/10 border border-primary/20 text-primary rounded-xl flex items-center justify-center mb-6">
+                      <Icon size={22} />
+                    </div>
+                  ) : null}
+                  
+                  <h2 className="text-3xl font-bold font-display mb-4 text-white leading-tight">
+                    {step.title}
+                  </h2>
+                  <p className="text-gray-400 text-base leading-relaxed mb-10">
+                    {step.desc}
+                  </p>
+                </div>
+
+                <div className="w-full mt-auto pb-12 flex flex-col items-center gap-8">
+                  {/* Dots indicator */}
+                  <div className="flex gap-2">
+                    {ONBOARDING_STEPS.map((_, idx) => (
+                      <div 
+                        key={idx}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${onboardingStep === idx ? 'w-8 bg-primary' : 'w-1.5 bg-gray-800'}`}
+                      />
+                    ))}
+                  </div>
+
+                  <button 
+                    onClick={nextOnboardingStep}
+                    className="w-full py-4 bg-primary text-black font-extrabold rounded-full flex items-center justify-center gap-2 text-lg active:scale-95 transition-all shadow-lg shadow-primary/20"
+                  >
+                    {onboardingStep === ONBOARDING_STEPS.length - 1 ? 'Continuar' : 'Próximo'}
+                    {onboardingStep < ONBOARDING_STEPS.length - 1 && <ChevronRight size={20} />}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })()}
+
+        {/* --- Login Screen --- */}
+        {screen === 'login' && (
           <motion.div 
-            key="mission"
-            initial={{ x: 300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -300, opacity: 0 }}
-            className="flex flex-col h-screen overflow-y-auto"
+            key="login"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="flex flex-col h-screen px-8 pt-20 overflow-y-auto"
           >
-            <div className="relative shrink-0 h-1/2">
-              <img 
-                src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop" 
-                alt="Healthy food bowl" 
-                className="w-full h-full object-cover opacity-60"
-              />
-              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-dark-bg to-transparent" />
+            <button 
+              onClick={() => navigate('welcome')}
+              className="w-10 h-10 bg-card-bg rounded-full flex items-center justify-center mb-8 border border-gray-800"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            
+            <h1 className="text-4xl font-bold font-display mb-2">Bem-vindo de volta!</h1>
+            <p className="text-gray-500 mb-10 text-lg">Faz login para continuar a cuidar da tua saúde.</p>
+            
+            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); navigate('dashboard'); }}>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400 ml-1">E-mail</label>
+                <input 
+                  type="email" 
+                  placeholder="exemplo@email.com"
+                  className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400 ml-1">Palavra-passe</label>
+                <input 
+                  type="password" 
+                  placeholder="••••••••"
+                  className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
+                  required
+                />
+                <p className="text-right text-xs text-primary font-bold cursor-pointer pt-1">Esqueci-me da senha</p>
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full py-4 bg-primary text-black font-extrabold rounded-full text-lg shadow-lg shadow-primary/20 mt-4 active:scale-95 transition-transform"
+              >
+                Entrar
+              </button>
+            </form>
+
+            <div className="mt-auto pb-12 pt-8 text-center">
+              <p className="text-gray-500 text-sm">
+                Não tens conta? <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('signup')}>Regista-te agora</span>
+              </p>
             </div>
-            <div className="flex-1 px-8 pt-6 flex flex-col justify-between pb-12">
-              <div className="mb-8">
-                <span className="inline-block px-3 py-1 bg-[#d97706]/20 text-[#d97706] border border-[#d97706]/30 rounded-full text-[10px] font-bold tracking-widest uppercase font-display mb-4">
-                  A Nossa Missão
-                </span>
-                <h2 className="text-4xl font-bold font-display mb-4 leading-tight">
-                  Comer bem com o que tens na mesa 🍽️
-                </h2>
-                <p className="text-gray-400 text-lg leading-relaxed">
-                  O NutriLens é o teu guia nutricional pessoal, criado para te ajudar a comer melhor com o que tens na mesa, prevenindo problemas como a anemia e fortalecendo a tua saúde.
+          </motion.div>
+        )}
+
+        {/* --- Signup Screen --- */}
+        {screen === 'signup' && (
+          <motion.div 
+            key="signup"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="flex flex-col h-screen px-8 pt-20 overflow-y-auto"
+          >
+            <button 
+              onClick={() => navigate('login')}
+              className="w-10 h-10 bg-card-bg rounded-full flex items-center justify-center mb-8 border border-gray-800"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            
+            <h1 className="text-4xl font-bold font-display mb-2">Cria a tua conta</h1>
+            <p className="text-gray-500 mb-10 text-lg">Começa hoje a tua jornada para uma vida mais saudável.</p>
+            
+            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); navigate('dashboard'); }}>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400 ml-1">Nome completo</label>
+                <input 
+                  type="text" 
+                  placeholder="O teu nome"
+                  className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400 ml-1">E-mail</label>
+                <input 
+                  type="email" 
+                  placeholder="exemplo@email.com"
+                  className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400 ml-1">Palavra-passe</label>
+                <input 
+                  type="password" 
+                  placeholder="Mínimo 8 caracteres"
+                  className="w-full p-4 bg-card-bg border border-gray-800 rounded-2xl focus:border-primary outline-none transition-colors"
+                  required
+                />
+              </div>
+
+              <div className="flex items-start gap-3 px-1">
+                <div className="flex items-center justify-center w-5 h-5 rounded border border-gray-700 bg-card-bg mt-0.5 shrink-0">
+                  <Check size={12} className="text-primary" />
+                </div>
+                <p className="text-xs text-gray-500 leading-tight">
+                  Ao criar uma conta, aceito os <span className="text-primary font-medium">Termos de Uso</span> e a <span className="text-primary font-medium">Política de Privacidade</span> do NutriLens.
                 </p>
               </div>
+
               <button 
-                onClick={() => navigate('profile')}
-                className="w-full py-4 bg-primary text-black font-bold rounded-full flex items-center justify-center gap-2 text-lg active:scale-95 transition-transform shrink-0"
+                type="submit"
+                className="w-full py-4 bg-primary text-black font-extrabold rounded-full text-lg shadow-lg shadow-primary/20 active:scale-95 transition-transform"
               >
-                Isso é para mim! ❤️
+                Registar conta
               </button>
+            </form>
+
+            <div className="mt-8 pb-12 text-center">
+              <p className="text-gray-500 text-sm">
+                Já tens conta? <span className="text-primary font-bold cursor-pointer hover:underline" onClick={() => navigate('login')}>Faz login</span>
+              </p>
             </div>
           </motion.div>
         )}
@@ -245,7 +456,7 @@ export default function App() {
             <div className="mt-auto pb-12 shrink-0">
               <button 
                 disabled={!selectedProfile}
-                onClick={() => navigate('dashboard')}
+                onClick={() => navigate('signup')}
                 className={`w-full py-4 rounded-full font-bold text-lg transition-all ${
                   selectedProfile 
                   ? 'bg-primary text-black active:scale-95' 
