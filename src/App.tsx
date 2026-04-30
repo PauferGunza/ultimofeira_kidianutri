@@ -140,6 +140,7 @@ export default function App() {
   const [fullName, setFullName] = useState('');
 
   const fetchUserData = async (userId: string) => {
+    if (!supabase) return;
     try {
       // Fetch Profile
       const { data: profile } = await supabase
@@ -165,6 +166,11 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (!supabase) {
+      setErrorMessage('Aviso: Configuração do Supabase em falta. Adiciona VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nos Segredos.');
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
@@ -195,6 +201,10 @@ export default function App() {
 
   const handleSignUp = async (e: FormEvent) => {
     e.preventDefault();
+    if (!supabase) {
+      setErrorMessage('Erro: Supabase não está configurado.');
+      return;
+    }
     setLoading(true);
     setErrorMessage('');
 
@@ -239,6 +249,10 @@ export default function App() {
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
+    if (!supabase) {
+      setErrorMessage('Erro: Supabase não está configurado.');
+      return;
+    }
     setLoading(true);
     setErrorMessage('');
 
@@ -256,7 +270,9 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     navigate('welcome');
   };
 
@@ -1005,7 +1021,7 @@ export default function App() {
               <div className="flex gap-4">
                  <button 
                   onClick={async () => {
-                    if (!session) return;
+                    if (!supabase || !session) return;
                     setLoading(true);
                     try {
                       const { error } = await supabase

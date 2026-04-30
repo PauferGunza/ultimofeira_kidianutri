@@ -1,13 +1,26 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
-const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
+const getSupabaseCredentials = () => {
+  const url = (import.meta as any).env.VITE_SUPABASE_URL;
+  const key = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
+  return { url, key };
+};
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials missing. Authentication will not work until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in the Secrets panel.');
-}
+let supabaseInstance: SupabaseClient | null = null;
 
-export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseAnonKey || ''
-);
+export const getSupabase = () => {
+  if (supabaseInstance) return supabaseInstance;
+
+  const { url, key } = getSupabaseCredentials();
+
+  if (!url || !key) {
+    // Retornamos um mock ou lançamos um erro controlado apenas quando usado
+    return null;
+  }
+
+  supabaseInstance = createClient(url, key);
+  return supabaseInstance;
+};
+
+// Exportamos uma instância para manter compatibilidade, mas protegida contra null
+export const supabase = getSupabase() as SupabaseClient;
