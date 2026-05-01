@@ -28,7 +28,8 @@ import {
   Loader2,
   MessageSquare,
   Send,
-  Sparkles
+  Sparkles,
+  Mic
 } from 'lucide-react';
 import { sendMessageToAI, ChatMessage } from './services/chatService';
 
@@ -164,6 +165,29 @@ export default function App() {
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [isListening, setIsListening] = useState(false);
+
+  const toggleListening = () => {
+    // Basic UI simulation for voice if browser allows or just for feel
+    setIsListening(!isListening);
+    if (!isListening) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'pt-PT';
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setChatInput(prev => prev + (prev ? ' ' : '') + transcript);
+          setIsListening(false);
+        };
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
+        recognition.start();
+      } else {
+        setTimeout(() => setIsListening(false), 2000); // UI fallback
+      }
+    }
+  };
 
   useEffect(() => {
     if (screen === 'chat') {
@@ -181,7 +205,7 @@ export default function App() {
     setIsChatLoading(true);
 
     try {
-      const response = await sendMessageToAI(newMessages);
+      const response = await sendMessageToAI(newMessages, userProfile);
       setChatMessages(prev => [...prev, { role: 'model', content: response }]);
     } catch (err: any) {
       console.error('Chat error:', err);
@@ -264,7 +288,7 @@ export default function App() {
     setErrorMessage('');
     
     try {
-      const { analysis, imageUrl } = await uploadAndAnalyze(file, session.user.id);
+      const { analysis, imageUrl } = await uploadAndAnalyze(file, session.user.id, userProfile);
       setAnalysisResult(analysis);
       setAnalysisImageUrl(imageUrl);
       await fetchUserData(session.user.id); // Refresh dashboard stats
@@ -956,15 +980,15 @@ export default function App() {
                     key={scan.id} 
                     onClick={() => {
                       setAnalysisResult({
-                        item_name: scan.item_name,
+                        itemName: scan.item_name,
+                        isFood: true,
                         calories: scan.calories,
-                        protein: scan.protein,
+                        glycemicImpact: scan.score_label,
                         carbs: scan.carbs,
-                        fat: scan.fat,
-                        fiber: scan.fiber,
-                        score: scan.score,
-                        score_label: scan.score_label,
-                        recommendation: scan.recommendation
+                        sodium: scan.metadata?.sodium || 'N/A',
+                        vitamins: scan.metadata?.vitamins || 'N/A',
+                        kidiaAdvice: scan.recommendation,
+                        safetyAlert: scan.metadata?.safetyAlert || ''
                       });
                       setAnalysisImageUrl(scan.image_url);
                       navigate('result');
@@ -1120,15 +1144,15 @@ export default function App() {
                             setLoading(true);
                             try {
                               const planMeal = {
-                                item_name: "Mufete Completo",
-                                calories: 620,
-                                protein: 45,
-                                carbs: 65,
-                                fat: 22,
-                                fiber: 12,
-                                score: 95,
-                                score_label: "Excelente",
-                                recommendation: "Excelente escolha tradicional e completa."
+                                itemName: "Mufete Completo",
+                                isFood: true,
+                                calories: "620 kcal",
+                                glycemicImpact: "Médio",
+                                carbs: "65g",
+                                sodium: "320mg",
+                                vitamins: "A, B12, C",
+                                kidiaAdvice: "Excelente escolha tradicional e completa.",
+                                safetyAlert: ""
                               };
                               await saveMealToHistory(session.user.id, planMeal, "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop");
                               await fetchUserData(session.user.id);
@@ -1363,22 +1387,30 @@ export default function App() {
             </div>
 
             <div className="px-5 py-3 pb-24">
-               <div className="relative group">
-                  <input 
-                    type="text" 
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Pergunta sobre mufete, quizaca..."
-                    className="w-full bg-card-bg border border-gray-800 rounded-2xl px-5 py-3 pr-14 text-xs focus:border-primary outline-none transition-all shadow-2xl focus:ring-1 focus:ring-primary/20"
-                  />
+               <div className="relative group flex items-center gap-2">
                   <button 
-                    onClick={handleSendMessage}
-                    disabled={!chatInput.trim() || isChatLoading}
-                    className="absolute right-1.5 top-1.5 bottom-1.5 w-11 bg-primary rounded-xl flex items-center justify-center text-black active:scale-95 transition-transform disabled:opacity-50"
+                    onClick={toggleListening}
+                    className={`shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-card-bg border border-gray-800 text-gray-400'}`}
                   >
-                    <Send size={16} />
+                    <Mic size={18} />
                   </button>
+                  <div className="relative flex-1">
+                    <input 
+                      type="text" 
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                      placeholder={isListening ? "A ouvir..." : "Pergunta sobre nutrição..."}
+                      className="w-full bg-card-bg border border-gray-800 rounded-2xl px-5 py-3 pr-14 text-xs focus:border-primary outline-none transition-all shadow-2xl focus:ring-1 focus:ring-primary/20"
+                    />
+                    <button 
+                      onClick={handleSendMessage}
+                      disabled={!chatInput.trim() || isChatLoading}
+                      className="absolute right-1.5 top-1.5 bottom-1.5 w-11 bg-primary rounded-xl flex items-center justify-center text-black active:scale-95 transition-transform disabled:opacity-50"
+                    >
+                      <Send size={16} />
+                    </button>
+                  </div>
                </div>
             </div>
             
@@ -1591,33 +1623,41 @@ export default function App() {
                 />
                 <div className="absolute top-3 right-3 bg-primary/20 backdrop-blur-md border border-primary/30 px-2.5 py-1 rounded-full flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                  <span className="text-[10px] font-bold text-primary">{analysisResult?.score || 0}% {analysisResult?.score_label || 'Saúde'}</span>
+                  <span className="text-[10px] font-bold text-primary">{analysisResult?.glycemicImpact || 'Saúde'}</span>
                 </div>
                 
                 <div className="absolute bottom-0 inset-x-0 p-5 bg-gradient-to-t from-black/90 to-transparent flex flex-col items-center text-center">
-                   <h3 className="text-2xl font-bold font-display mb-0.5">{analysisResult?.item_name || 'Analisando'}</h3>
-                   <span className="text-primary font-bold text-lg font-display">{analysisResult?.calories || 0} kcal</span>
+                   <h3 className="text-2xl font-bold font-display mb-0.5">{analysisResult?.itemName || 'Analisando'}</h3>
+                   <span className="text-primary font-bold text-lg font-display">{analysisResult?.calories || 0}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-2 mb-8">
+              {analysisResult?.safetyAlert && (
+                <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl mb-6 flex items-start gap-3">
+                   <Bell className="text-red-500 shrink-0" size={18} />
+                   <p className="text-[11px] text-red-400 font-bold leading-relaxed">
+                     {analysisResult.safetyAlert}
+                   </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-2 mb-8">
                 {[
-                  { l: 'Prot', v: `${analysisResult?.protein || 0}g` },
-                  { l: 'Carb', v: `${analysisResult?.carbs || 0}g` },
-                  { l: 'Gord', v: `${analysisResult?.fat || 0}g` },
-                  { l: 'Fibra', v: `${analysisResult?.fiber || 0}g` },
+                  { l: 'Carb', v: analysisResult?.carbs || 'N/A' },
+                  { l: 'Sódio', v: analysisResult?.sodium || 'N/A' },
+                  { l: 'Vitaminas', v: analysisResult?.vitamins || 'N/A' },
                 ].map((m) => (
                   <div key={m.l} className="p-2.5 rounded-xl border border-gray-800 bg-card-bg flex flex-col items-center text-center">
                     <span className="text-[8px] font-bold uppercase text-gray-400 mb-1">{m.l}</span>
-                    <span className="text-sm font-bold font-display">{m.v}</span>
+                    <span className="text-[11px] font-bold font-display line-clamp-1">{m.v}</span>
                   </div>
                 ))}
               </div>
 
               <div className="bg-[#d97706]/10 border border-[#d97706]/30 p-5 rounded-2xl mb-8">
-                 <h4 className="text-[#d97706] font-bold text-sm mb-1.5">Dica Kidia</h4>
+                 <h4 className="text-[#d97706] font-bold text-sm mb-1.5">Conselho da Kidia</h4>
                  <p className="text-[11px] text-gray-300 leading-relaxed italic">
-                   "{analysisResult?.recommendation || 'Processando recomendação...'}"
+                   "{analysisResult?.kidiaAdvice || 'Processando recomendação...'}"
                  </p>
               </div>
 

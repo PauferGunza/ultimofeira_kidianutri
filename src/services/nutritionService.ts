@@ -2,20 +2,21 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from "../lib/supabase";
 
 export interface NutritionAnalysis {
-  item_name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  score: number;
-  score_label: string;
-  recommendation: string;
+  itemName: string;
+  isFood: boolean;
+  calories: string;
+  glycemicImpact: string;
+  carbs: string;
+  sodium: string;
+  vitamins: string;
+  kidiaAdvice: string;
+  safetyAlert: string;
 }
 
-export const analyzeImage = async (base64Image: string): Promise<NutritionAnalysis> => {
-  // Hybrid logic: In AI Studio preview, call from frontend.
-  // In production (Vercel), call from backend.
+export const analyzeImage = async (
+  base64Image: string, 
+  profile: any
+): Promise<NutritionAnalysis> => {
   const isDev = window.location.hostname.includes('googleusercontent.com') || 
                 window.location.hostname.includes('run.app') ||
                 window.location.hostname === 'localhost' ||
@@ -26,23 +27,25 @@ export const analyzeImage = async (base64Image: string): Promise<NutritionAnalys
     const key = process.env.GEMINI_API_KEY || (process.env as any).KEY_API || '';
     const ai = new GoogleGenAI({ apiKey: key });
     
-    const systemInstruction = `Analise esta imagem de uma refeição e forneça os detalhes nutricionais. 
-    Seja o mais preciso possível para um guia de saúde em Angola.`;
+    const systemInstruction = `Analisa esta foto de comida ou planta angolana. 
+    REGRA DE OURO: Conteúdo ultra-conciso. 
+    Kidia Advice deve ser apenas uma frase curta (máx 15 palavras).
+    Perfil: Diab: ${profile?.diabetes ? 'S' : 'N'}, Hiper: ${profile?.hypertension ? 'S' : 'N'}.`;
 
     const responseSchema = {
       type: Type.OBJECT,
       properties: {
-        item_name: { type: Type.STRING, description: "Nome do item identificado" },
-        calories: { type: Type.NUMBER, description: "Calorias estimadas" },
-        protein: { type: Type.NUMBER, description: "Proteína em gramas" },
-        carbs: { type: Type.NUMBER, description: "Carboidratos em gramas" },
-        fat: { type: Type.NUMBER, description: "Gordura em gramas" },
-        fiber: { type: Type.NUMBER, description: "Fibra em gramas" },
-        score: { type: Type.NUMBER, description: "Pontuação de 0 a 100" },
-        score_label: { type: Type.STRING, description: "Rótulo da pontuação (Saudável, Moderado, Atenção)" },
-        recommendation: { type: Type.STRING, description: "Uma frase curta de conselho" }
+        itemName: { type: Type.STRING, description: "Nome do item identificado" },
+        isFood: { type: Type.BOOLEAN, description: "Verdadeiro se for comida/prato, falso se for planta medicinal ou outro" },
+        calories: { type: Type.STRING, description: "Ex: '350 kcal' ou 'N/A'" },
+        glycemicImpact: { type: Type.STRING, description: "DEVE SER EXATAMENTE UM DESTES: 'Baixo', 'Médio', 'Alto', ou 'N/A'" },
+        carbs: { type: Type.STRING, description: "Ex: '45g' ou 'N/A'" },
+        sodium: { type: Type.STRING, description: "Ex: '150mg' ou 'N/A'" },
+        vitamins: { type: Type.STRING, description: "Principais vitaminas/minerais presentes" },
+        kidiaAdvice: { type: Type.STRING, description: "Conselho integrativo e cultural da Kidia" },
+        safetyAlert: { type: Type.STRING, description: "Aviso de segurança personalizado. Vazio se não houver perigo." }
       },
-      required: ["item_name", "calories", "protein", "carbs", "fat", "fiber", "score", "score_label", "recommendation"]
+      required: ["itemName", "isFood", "calories", "glycemicImpact", "carbs", "sodium", "vitamins", "kidiaAdvice", "safetyAlert"]
     };
 
     const response = await ai.models.generateContent({
@@ -50,7 +53,7 @@ export const analyzeImage = async (base64Image: string): Promise<NutritionAnalys
       contents: [{
         parts: [
           { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-          { text: "Analise esta imagem nutricionalmente. Retorne em JSON." }
+          { text: "Análise nutricional e botânica Kidia. Retorne em JSON." }
         ]
       }],
       config: {
@@ -66,7 +69,7 @@ export const analyzeImage = async (base64Image: string): Promise<NutritionAnalys
     const response = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ base64Image })
+      body: JSON.stringify({ base64Image, profile })
     });
 
     if (!response.ok) {
@@ -80,18 +83,19 @@ export const analyzeImage = async (base64Image: string): Promise<NutritionAnalys
 
 export const uploadAndAnalyze = async (
   file: File, 
-  userId: string
+  userId: string,
+  profile: any
 ): Promise<{ analysis: NutritionAnalysis; imageUrl: string }> => {
   // 1. Upload to Supabase Storage
   const fileExt = file.name.split('.').pop();
   const fileName = `${userId}/${Date.now()}.${fileExt}`;
-  const filePath = `${fileName}`; // Uploading to bucket root
+  const filePath = `${fileName}`; 
 
   const { error: uploadError } = await supabase.storage
     .from('meals')
     .upload(filePath, file);
 
-  if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}. Certifica-te que o bucket 'meals' existe.`);
+  if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}`);
 
   // Get Public URL
   const { data: { publicUrl } } = supabase.storage.from('meals').getPublicUrl(filePath);
@@ -108,7 +112,7 @@ export const uploadAndAnalyze = async (
   const base64Image = await base64Promise;
 
   // 3. Analyze with Gemini
-  const analysis = await analyzeImage(base64Image);
+  const analysis = await analyzeImage(base64Image, profile);
 
   return { analysis, imageUrl: publicUrl };
 };
@@ -118,16 +122,18 @@ export const saveMealToHistory = async (userId: string, analysis: NutritionAnaly
     {
       user_id: userId,
       date: new Date().toISOString().split('T')[0],
-      item_name: analysis.item_name,
+      item_name: analysis.itemName,
       calories: analysis.calories,
-      protein: analysis.protein,
       carbs: analysis.carbs,
-      fat: analysis.fat,
-      fiber: analysis.fiber,
-      score: analysis.score,
-      score_label: analysis.score_label,
-      recommendation: analysis.recommendation,
-      image_url: imageUrl
+      score_label: analysis.glycemicImpact,
+      recommendation: analysis.kidiaAdvice,
+      image_url: imageUrl,
+      // Map other fields as needed or update DB schema
+      metadata: {
+        sodium: analysis.sodium,
+        vitamins: analysis.vitamins,
+        safetyAlert: analysis.safetyAlert
+      }
     }
   ]);
 

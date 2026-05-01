@@ -36,16 +36,21 @@ app.get('/api/health', (req, res) => {
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { messages } = req.body;
+    const { messages, profile } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensagens inválidas' });
 
     const ai = getAI();
     if (!ai) {
-      return res.status(500).json({ error: 'GEMINI_API_KEY não configurada na Vercel. Por favor, adiciona-a nas configurações do projeto.' });
+      return res.status(500).json({ error: 'GEMINI_API_KEY não configurada na Vercel.' });
     }
 
-    const systemInstruction = `Tu és o Kidia Nutri AI, um assistente virtual de nutrição especializado na saúde e culinária de Angola. 
-    REGRAS: Sê extremamente direto, conciso e prático. Responde em poucas palavras sempre que possível, focando em ingredientes locais de Angola. Sem textos longos ou enrolação.`;
+    const systemInstruction = `Tu és o Kidia, um assistente virtual de saúde altamente profissional em Angola.
+        REGRAS CRÍTICAS DE ECONOMIA:
+        1. Responde com o MÍNIMO de palavras possível.
+        2. Proibido saudações, introduções ou "Como posso ajudar".
+        3. Foca apenas em factos técnicos e nutrição local.
+        4. Se uma palavra basta, não uses duas.
+        5. Perfil: ${profile?.name || 'Amigo'}, Diabético: ${profile?.diabetes ? 'Sim' : 'Não'}, Hipertenso: ${profile?.hypertension ? 'Sim' : 'Não'}, Peso: ${profile?.weightLoss ? 'Perder' : 'Manter'}.`;
 
     const result = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -67,7 +72,7 @@ app.post('/api/chat', async (req, res) => {
 
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { base64Image } = req.body;
+    const { base64Image, profile } = req.body;
     if (!base64Image) return res.status(400).json({ error: 'Falta a imagem' });
 
     const ai = getAI();
@@ -75,23 +80,25 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(500).json({ error: 'GEMINI_API_KEY não configurada na Vercel.' });
     }
 
-    const systemInstruction = `Analise esta imagem de uma refeição e forneça os detalhes nutricionais. 
-    Seja o mais preciso possível para um guia de saúde em Angola.`;
+    const systemInstruction = `Analisa esta foto de comida ou planta angolana. 
+        REGRA DE OURO: Conteúdo ultra-conciso. 
+        Kidia Advice deve ser apenas uma frase curta (máx 15 palavras).
+        Perfil: Diab: ${profile?.diabetes ? 'S' : 'N'}, Hiper: ${profile?.hypertension ? 'S' : 'N'}, Peso: ${profile?.weightLoss ? 'P' : 'M'}.`;
 
     const responseSchema = {
       type: Type.OBJECT,
       properties: {
-        item_name: { type: Type.STRING, description: "Nome do item identificado" },
-        calories: { type: Type.NUMBER, description: "Calorias estimadas" },
-        protein: { type: Type.NUMBER, description: "Proteína em gramas" },
-        carbs: { type: Type.NUMBER, description: "Carboidratos em gramas" },
-        fat: { type: Type.NUMBER, description: "Gordura em gramas" },
-        fiber: { type: Type.NUMBER, description: "Fibra em gramas" },
-        score: { type: Type.NUMBER, description: "Pontuação de 0 a 100" },
-        score_label: { type: Type.STRING, description: "Rótulo da pontuação (Saudável, Moderado, Atenção)" },
-        recommendation: { type: Type.STRING, description: "Uma frase curta de conselho" }
+        itemName: { type: Type.STRING, description: "Nome do item identificado" },
+        isFood: { type: Type.BOOLEAN, description: "Verdadeiro se for comida/prato, falso se for planta medicinal ou outro" },
+        calories: { type: Type.STRING, description: "Ex: '350 kcal' ou 'N/A'" },
+        glycemicImpact: { type: Type.STRING, description: "DEVE SER EXATAMENTE UM DESTES: 'Baixo', 'Médio', 'Alto', ou 'N/A'" },
+        carbs: { type: Type.STRING, description: "Ex: '45g' ou 'N/A'" },
+        sodium: { type: Type.STRING, description: "Ex: '150mg' ou 'N/A'" },
+        vitamins: { type: Type.STRING, description: "Principais vitaminas/minerais presentes" },
+        kidiaAdvice: { type: Type.STRING, description: "Conselho integrativo e cultural da Kidia" },
+        safetyAlert: { type: Type.STRING, description: "Aviso de segurança personalizado. Vazio se não houver perigo." }
       },
-      required: ["item_name", "calories", "protein", "carbs", "fat", "fiber", "score", "score_label", "recommendation"]
+      required: ["itemName", "isFood", "calories", "glycemicImpact", "carbs", "sodium", "vitamins", "kidiaAdvice", "safetyAlert"]
     };
 
     const result = await ai.models.generateContent({
@@ -99,7 +106,7 @@ app.post('/api/analyze', async (req, res) => {
       contents: [{
         parts: [
           { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-          { text: "Analise esta imagem nutricionalmente. Retorne em JSON." }
+          { text: "Análise nutricional e botânica Kidia. Retorne em JSON." }
         ]
       }],
       config: {

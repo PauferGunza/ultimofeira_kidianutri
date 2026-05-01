@@ -5,7 +5,10 @@ export interface ChatMessage {
   content: string;
 }
 
-export const sendMessageToAI = async (messages: ChatMessage[]): Promise<string> => {
+export const sendMessageToAI = async (
+  messages: ChatMessage[], 
+  profile: any
+): Promise<string> => {
   const isDev = window.location.hostname.includes('googleusercontent.com') || 
                 window.location.hostname.includes('run.app') ||
                 window.location.hostname === 'localhost' ||
@@ -16,14 +19,12 @@ export const sendMessageToAI = async (messages: ChatMessage[]): Promise<string> 
     const key = process.env.GEMINI_API_KEY || (process.env as any).KEY_API || '';
     const ai = new GoogleGenAI({ apiKey: key });
     
-    const systemInstruction = `Tu és o Kidia Nutri AI, um assistente virtual de nutrição especializado na saúde e culinária de Angola. 
-    O teu objetivo é ajudar os angolanos a comerem de forma mais saudável.
-    REGRAS DE RESPOSTA:
-    1. Sê EXTREMAMENTE conciso e direto.
-    2. Evita introduções longas ou saudações repetitivas.
-    3. Dá conselhos práticos com ingredientes locais (Funge, Quizaca, etc.).
-    4. Se for uma pergunta simples, responde com apenas uma ou duas frases.
-    5. Nunca gastes espaço desnecessário com texto decorativo.`;
+    const systemInstruction = `Tu és o Kidia, assistente de saúde em Angola. 
+    REGRAS DE ECONOMIA DE TOKENS:
+    1. Responde com o MÍNIMO de palavras possível.
+    2. Proibido introduções, saudações ou textos educados desnecessários.
+    3. Foca apenas na resposta técnica.
+    4. Perfil: ${profile?.name || 'Amigo'}, Diab: ${profile?.diabetes ? 'S' : 'N'}, Hiper: ${profile?.hypertension ? 'S' : 'N'}.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -42,7 +43,7 @@ export const sendMessageToAI = async (messages: ChatMessage[]): Promise<string> 
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages })
+      body: JSON.stringify({ messages, profile })
     });
 
     if (!response.ok) {
