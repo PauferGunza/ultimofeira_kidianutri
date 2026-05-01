@@ -392,23 +392,23 @@ export default function App() {
               <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-dark-bg to-transparent" />
             </div>
             
-            <div className="flex-1 bg-dark-bg px-8 pt-10 rounded-t-[40px] -mt-12 relative z-10 flex flex-col items-center">
+            <div className="flex-1 bg-dark-bg px-6 pt-8 rounded-t-[32px] -mt-12 relative z-10 flex flex-col items-center">
               <div className="w-full">
-                <div className="inline-block px-4 py-1.5 border border-primary text-primary rounded-full text-[10px] font-bold tracking-widest uppercase font-display mb-6">
+                <div className="inline-block px-4 py-1.5 border border-primary text-primary rounded-full text-[10px] font-bold tracking-widest uppercase font-display mb-4">
                   Nutrição Personalizada
                 </div>
-                <h1 className="text-5xl font-bold font-display mb-4 text-white">Kidia Nutri</h1>
-                <p className="text-gray-400 text-base leading-relaxed mb-10 max-w-[90%]">
+                <h1 className="text-4xl font-bold font-display mb-3 text-white">Kidia Nutri</h1>
+                <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-[90%]">
                   O teu guia nutricional pessoal. Fotografa qualquer prato e descobre tudo sobre a tua alimentação.
                 </p>
               </div>
 
-              <div className="w-full space-y-4 mt-auto pb-12">
+              <div className="w-full space-y-3 mt-auto pb-8">
                 <button 
                   onClick={() => { setOnboardingStep(0); navigate('onboarding'); }}
-                  className="w-full py-4 bg-primary text-black font-extrabold rounded-full flex items-center justify-center gap-2 text-lg active:scale-95 transition-all shadow-lg shadow-primary/20"
+                  className="w-full py-3.5 bg-primary text-black font-extrabold rounded-full flex items-center justify-center gap-2 text-base active:scale-95 transition-all shadow-lg shadow-primary/20"
                 >
-                  Começar a jornada <ChevronRight size={20} />
+                  Começar a jornada <ChevronRight size={18} />
                 </button>
                 
                 <button 
@@ -803,100 +803,100 @@ export default function App() {
             key="dashboard"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col h-screen pb-24 overflow-y-auto px-6 pt-12"
+            className="flex flex-col h-screen pb-24 overflow-y-auto px-5 pt-10"
           >
-            <header className="flex justify-between items-start mb-8">
+            <header className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-3xl font-bold font-display leading-tight flex items-center gap-2">
+                <h2 className="text-2xl font-bold font-display leading-tight flex items-center gap-2">
                   Olá, {userProfile?.name || userEmail.split('@')[0]} 👋
                 </h2>
-                <p className="text-gray-500">Sábado, 18 De Abril</p>
+                <p className="text-gray-500 text-sm">Sábado, 18 De Abril</p>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <button onClick={() => navigate('profile_settings')} className="text-gray-500 hover:text-primary transition-colors">
-                  <User size={24} />
+                  <User size={22} />
                 </button>
                 <div className="relative">
-                  <Bell size={24} className="text-gray-400" />
+                  <Bell size={22} className="text-gray-400" />
                   <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-dark-bg" />
                 </div>
               </div>
             </header>
 
-            <section className="bg-primary/5 border border-primary/30 rounded-2xl p-4 flex items-center justify-between mb-6">
+            <section className="bg-primary/5 border border-primary/30 rounded-xl p-3.5 flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <Flame className="text-orange-500" fill="currentColor" size={28} />
+                <Flame className="text-orange-500" fill="currentColor" size={24} />
                 <div>
-                  <h4 className="font-bold text-sm">{userProfile?.current_streak || 0} Dias Seguidos Cuidando de Ti</h4>
-                  <p className="text-xs text-primary">Continua assim — és incrível!</p>
+                  <h4 className="font-bold text-xs">{userProfile?.current_streak || 0} Dias Seguidos Cuidando de Ti</h4>
+                  <p className="text-[10px] text-primary">Continua assim — és incrível!</p>
                 </div>
               </div>
-              <button className="bg-primary text-black text-xs font-bold px-4 py-2 rounded-full">Manter</button>
+              <button className="bg-primary text-black text-[10px] font-bold px-3 py-1.5 rounded-full">Manter</button>
             </section>
 
-            <div className="grid grid-cols-3 gap-3 mb-8">
-              <div className="bg-card-bg p-4 rounded-2xl text-center flex flex-col items-center">
-                <span className="text-2xl font-bold font-display">{scansToday.length}</span>
-                <span className="text-[10px] text-gray-500 flex items-center gap-1 mt-1">🍽️ Refeições</span>
+            <div className="grid grid-cols-3 gap-2.5 mb-6">
+              <div className="bg-card-bg p-3.5 rounded-xl text-center flex flex-col items-center">
+                <span className="text-xl font-bold font-display">{scansToday.length}</span>
+                <span className="text-[9px] text-gray-500 flex items-center gap-1 mt-1">🍽️ Refeições</span>
               </div>
-              <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl text-center flex flex-col items-center">
-                <span className="text-2xl font-bold font-display text-primary">
+              <div className="bg-primary/10 border border-primary/20 p-3.5 rounded-xl text-center flex flex-col items-center">
+                <span className="text-xl font-bold font-display text-primary">
                   {scansToday.reduce((acc, s) => acc + (Number(s.calories) || 0), 0).toFixed(0)}
                 </span>
-                <span className="text-[10px] text-primary flex items-center gap-1 mt-1">🔥 kcal hoje</span>
+                <span className="text-[9px] text-primary flex items-center gap-1 mt-1">🔥 kcal hoje</span>
               </div>
-              <div className="bg-card-bg p-4 rounded-2xl text-center flex flex-col items-center">
+              <div className="bg-card-bg p-3.5 rounded-xl text-center flex flex-col items-center">
                 <div className="w-5 h-5 bg-red-500/20 rounded-full flex items-center justify-center mb-1">
-                  <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
                 </div>
-                <span className="text-[10px] font-bold">Controlar</span>
-                <span className="text-[10px] text-gray-500">Objectivo</span>
+                <span className="text-[9px] font-bold">Controlar</span>
+                <span className="text-[9px] text-gray-500">Objectivo</span>
               </div>
             </div>
 
-            <section className="bg-card-bg p-6 rounded-3xl mb-8 border border-gray-800">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-lg">Calorias hoje</h3>
-                <span className="text-gray-500 text-sm font-display">
+            <section className="bg-card-bg p-5 rounded-2xl mb-6 border border-gray-800">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-base">Calorias hoje</h3>
+                <span className="text-gray-500 text-xs font-display">
                   {scansToday.reduce((acc, s) => acc + (Number(s.calories) || 0), 0).toFixed(0)} / {userProfile?.daily_calorie_target || 2000} kcal
                 </span>
               </div>
-              <div className="w-full h-3 bg-gray-900 rounded-full mb-8">
+              <div className="w-full h-2.5 bg-gray-900 rounded-full mb-6">
                 <div 
                   className="h-full bg-primary rounded-full blur-[1px] transition-all duration-500" 
                   style={{ width: `${Math.min(100, (scansToday.reduce((acc, s) => acc + (Number(s.calories) || 0), 0) / (userProfile?.daily_calorie_target || 2000)) * 100)}%` }}
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 border border-primary/30 rounded-xl relative overflow-hidden">
-                  <div className="absolute top-3 left-3 w-1.5 h-1.5 rounded-full bg-primary" />
-                  <span className="block text-[10px] text-primary font-bold ml-4 mb-2">Proteína</span>
-                  <span className="text-xl font-bold font-display">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-2.5 border border-primary/30 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-2.5 left-2.5 w-1 h-1 rounded-full bg-primary" />
+                  <span className="block text-[9px] text-primary font-bold ml-3 mb-1">Proteína</span>
+                  <span className="text-lg font-bold font-display">
                     {scansToday.reduce((acc, s) => acc + (Number(s.protein) || 0), 0).toFixed(0)}g
                   </span>
                   <ProgressBar progress={Math.min(100, scansToday.reduce((acc, s) => acc + Number(s.protein), 0))} />
                 </div>
-                <div className="p-3 border border-orange-500/30 rounded-xl relative overflow-hidden">
-                  <div className="absolute top-3 left-3 w-1.5 h-1.5 rounded-full bg-orange-500" />
-                  <span className="block text-[10px] text-orange-500 font-bold ml-4 mb-2">Carbs</span>
-                  <span className="text-xl font-bold font-display">
+                <div className="p-2.5 border border-orange-500/30 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-2.5 left-2.5 w-1 h-1 rounded-full bg-orange-500" />
+                  <span className="block text-[9px] text-orange-500 font-bold ml-3 mb-1">Carbs</span>
+                  <span className="text-lg font-bold font-display">
                     {scansToday.reduce((acc, s) => acc + (Number(s.carbs) || 0), 0).toFixed(0)}g
                   </span>
                   <ProgressBar progress={Math.min(100, scansToday.reduce((acc, s) => acc + Number(s.carbs), 0) / 2)} colorClass="bg-orange-500" />
                 </div>
-                <div className="p-3 border border-blue-500/30 rounded-xl relative overflow-hidden">
-                  <div className="absolute top-3 left-3 w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span className="block text-[10px] text-blue-500 font-bold ml-4 mb-2">Gordura</span>
-                  <span className="text-xl font-bold font-display">
+                <div className="p-2.5 border border-blue-500/30 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-2.5 left-2.5 w-1 h-1 rounded-full bg-blue-500" />
+                  <span className="block text-[9px] text-blue-500 font-bold ml-3 mb-1">Gordura</span>
+                  <span className="text-lg font-bold font-display">
                     {scansToday.reduce((acc, s) => acc + (Number(s.fat) || 0), 0).toFixed(0)}g
                   </span>
                   <ProgressBar progress={Math.min(100, scansToday.reduce((acc, s) => acc + Number(s.fat), 0))} colorClass="bg-blue-500" />
                 </div>
-                <div className="p-3 border border-purple-500/30 rounded-xl relative overflow-hidden">
-                  <div className="absolute top-3 left-3 w-1.5 h-1.5 rounded-full bg-purple-500" />
-                  <span className="block text-[10px] text-purple-500 font-bold ml-4 mb-2">Fibras</span>
-                  <span className="text-xl font-bold font-display">
+                <div className="p-2.5 border border-purple-500/30 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-2.5 left-2.5 w-1 h-1 rounded-full bg-purple-500" />
+                  <span className="block text-[9px] text-purple-500 font-bold ml-3 mb-1">Fibras</span>
+                  <span className="text-lg font-bold font-display">
                     {scansToday.reduce((acc, s) => acc + (Number(s.fiber) || 0), 0).toFixed(0)}g
                   </span>
                   <ProgressBar progress={Math.min(100, scansToday.reduce((acc, s) => acc + Number(s.fiber), 0) * 2)} colorClass="bg-purple-500" />
@@ -906,18 +906,18 @@ export default function App() {
 
             <button 
               onClick={() => navigate('capture')}
-              className="bg-primary p-6 rounded-3xl flex items-center justify-between mb-8 active:scale-95 transition-transform"
+              className="bg-primary p-5 rounded-2xl flex items-center justify-between mb-6 active:scale-95 transition-transform"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-black/10 rounded-full flex items-center justify-center">
-                  <Camera size={28} className="text-black" />
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center">
+                  <Camera size={24} className="text-black" />
                 </div>
                 <div className="text-left">
-                  <h4 className="text-black font-bold text-lg leading-tight">Consultar Análise da Nossa Equipa</h4>
-                  <p className="text-black/60 text-sm leading-snug max-w-[180px]">Fotografa a tua refeição e recebe a análise completa</p>
+                  <h4 className="text-black font-bold text-base leading-tight">Consultar Análise IA</h4>
+                  <p className="text-black/60 text-xs leading-snug max-w-[170px]">Fotografa a tua refeição e recebe a análise instantânea</p>
                 </div>
               </div>
-              <ChevronRight className="text-black" />
+              <ChevronRight className="text-black" size={18} />
             </button>
 
             <section className="bg-card-bg p-6 rounded-3xl border border-gray-800 relative z-0">
@@ -944,12 +944,12 @@ export default function App() {
             animate={{ opacity: 1 }}
             className="flex flex-col h-screen pb-24 overflow-y-auto"
           >
-            <div className="px-8 pt-12 mb-8">
-              <h1 className="text-3xl font-bold font-display mb-1">Histórico</h1>
-              <p className="text-gray-500 text-sm">Tuas análises nutricionais passadas</p>
+            <div className="px-6 pt-10 mb-6">
+              <h1 className="text-2xl font-bold font-display mb-1">Histórico</h1>
+              <p className="text-gray-500 text-xs">Tuas análises nutricionais passadas</p>
             </div>
 
-            <div className="px-6 space-y-4">
+            <div className="px-5 space-y-3">
               {scansToday.length > 0 ? (
                 scansToday.map((scan) => (
                   <button 
@@ -969,24 +969,24 @@ export default function App() {
                       setAnalysisImageUrl(scan.image_url);
                       navigate('result');
                     }}
-                    className="w-full bg-card-bg border border-gray-800 p-4 rounded-3xl flex items-center gap-4 text-left active:scale-95 transition-transform"
+                    className="w-full bg-card-bg border border-gray-800 p-3 rounded-2xl flex items-center gap-3 text-left active:scale-95 transition-transform"
                   >
                     <img 
                       src={scan.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop"} 
-                      className="w-16 h-16 rounded-2xl object-cover" 
+                      className="w-14 h-14 rounded-xl object-cover" 
                       alt={scan.item_name}
                     />
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
-                        <h4 className="font-bold text-sm mb-0.5">{scan.item_name}</h4>
-                        <ChevronRight size={14} className="text-gray-600" />
+                        <h4 className="font-bold text-xs mb-0.5">{scan.item_name}</h4>
+                        <ChevronRight size={12} className="text-gray-600" />
                       </div>
-                      <p className="text-[10px] text-gray-500 mb-2">{new Date(scan.created_at || scan.date).toLocaleDateString()}</p>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-primary">{scan.calories} kcal</span>
+                      <p className="text-[9px] text-gray-500 mb-1">{new Date(scan.created_at || scan.date).toLocaleDateString()}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-primary">{scan.calories} kcal</span>
                         <div className="flex items-center gap-1">
-                           <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                           <span className="text-[10px] text-gray-400">{scan.score_label}</span>
+                           <div className="w-1 h-1 rounded-full bg-primary" />
+                           <span className="text-[9px] text-gray-400">{scan.score_label}</span>
                         </div>
                       </div>
                     </div>
@@ -1013,41 +1013,41 @@ export default function App() {
             animate={{ opacity: 1 }}
             className="flex flex-col h-screen pb-24 overflow-y-auto"
           >
-            <div className="px-8 pt-12 mb-6 flex justify-between items-center">
+            <div className="px-6 pt-10 mb-5 flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold font-display mb-1">Plano alimentar</h1>
-                <p className="text-gray-500 text-sm italic">Manutenção · 2000 kcal/dia</p>
+                <h1 className="text-2xl font-bold font-display mb-1">Plano alimentar</h1>
+                <p className="text-gray-500 text-xs italic">Manutenção · 2000 kcal/dia</p>
               </div>
-              <button className="w-10 h-10 bg-primary/20 border border-primary/30 rounded-full flex items-center justify-center text-primary active:scale-95 transition-transform">
-                <Calendar size={20} />
+              <button className="w-9 h-9 bg-primary/20 border border-primary/30 rounded-full flex items-center justify-center text-primary active:scale-95 transition-transform">
+                <Calendar size={18} />
               </button>
             </div>
 
-            <div className="flex gap-2 px-8 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-2 px-6 mb-6 overflow-x-auto pb-2 scrollbar-hide">
               {['Hoje', 'Amanhã', 'Depois'].map((day, i) => (
                 <button 
                   key={day} 
-                  className={`px-8 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${i === 0 ? 'bg-primary text-black' : 'bg-gray-900 text-gray-500 border border-gray-800'}`}
+                  className={`px-6 py-1.5 rounded-full text-[10px] font-bold transition-all shrink-0 ${i === 0 ? 'bg-primary text-black' : 'bg-gray-900 text-gray-500 border border-gray-800'}`}
                 >
                   {day}
                 </button>
               ))}
             </div>
 
-            <div className="px-8 mb-8">
-              <div className="bg-card-bg border border-gray-800 p-6 rounded-[32px]">
-                <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="px-6 mb-6">
+              <div className="bg-card-bg border border-gray-800 p-5 rounded-2xl">
+                <div className="grid grid-cols-3 gap-3 mb-5">
                    <div className="text-center">
-                      <span className="block text-xl font-bold">1600</span>
-                      <span className="text-[9px] text-gray-500 uppercase tracking-widest">kcal no plano</span>
+                      <span className="block text-lg font-bold">1600</span>
+                      <span className="text-[8px] text-gray-500 uppercase tracking-widest">kcal no plano</span>
                    </div>
                    <div className="text-center">
-                      <span className="block text-xl font-bold">2000</span>
-                      <span className="text-[9px] text-gray-500 uppercase tracking-widest">kcal objectivo</span>
+                      <span className="block text-lg font-bold">2000</span>
+                      <span className="text-[8px] text-gray-500 uppercase tracking-widest">kcal objectivo</span>
                    </div>
                    <div className="text-center">
-                      <span className="block text-xl font-bold text-red-500">-400</span>
-                      <span className="text-[9px] text-gray-500 uppercase tracking-widest">diferença</span>
+                      <span className="block text-lg font-bold text-red-500">-400</span>
+                      <span className="text-[8px] text-gray-500 uppercase tracking-widest">diferença</span>
                    </div>
                 </div>
                 <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
@@ -1056,60 +1056,60 @@ export default function App() {
               </div>
             </div>
 
-            <div className="px-8 space-y-6">
-               <div className="flex flex-col gap-4">
+            <div className="px-6 space-y-5">
+               <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center mb-1">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-                        <Sun size={16} className="text-orange-500" />
+                      <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                        <Sun size={14} className="text-orange-500" />
                       </div>
-                      <h4 className="font-bold">Café da manhã</h4>
+                      <h4 className="font-bold text-sm">Café da manhã</h4>
                     </div>
-                    <span className="text-primary font-bold text-sm">280 kcal</span>
+                    <span className="text-primary font-bold text-xs">280 kcal</span>
                   </div>
                   
-                  <div className="bg-card-bg border border-gray-800 rounded-3xl overflow-hidden group">
-                     <div className="p-4 flex gap-4">
+                  <div className="bg-card-bg border border-gray-800 rounded-2xl overflow-hidden group">
+                     <div className="p-3.5 flex gap-3.5">
                         <img 
                           src="https://images.unsplash.com/photo-1543339308-43e59d6b73a6?q=80&w=400&auto=format&fit=crop" 
-                          className="w-20 h-20 rounded-2xl object-cover" 
+                          className="w-16 h-16 rounded-xl object-cover" 
                           alt="Meal"
                         />
                         <div className="flex-1">
-                           <h5 className="font-bold text-sm mb-1">Papaia com Mel</h5>
-                           <p className="text-[10px] text-gray-500 leading-relaxed">Papaia madura com uma colher de mel orgânico. Perfeito para digestão.</p>
-                           <div className="flex gap-2 mt-2">
-                             <span className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-bold rounded-full uppercase">Fibras</span>
-                             <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 text-[8px] font-bold rounded-full uppercase">Vitamina C</span>
+                           <h5 className="font-bold text-xs mb-1">Papaia com Mel</h5>
+                           <p className="text-[9px] text-gray-500 leading-relaxed">Papaia madura com uma colher de mel orgânico. Perfeito para digestão.</p>
+                           <div className="flex gap-1.5 mt-1.5">
+                             <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[7px] font-bold rounded-full uppercase">Fibras</span>
+                             <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-500 text-[7px] font-bold rounded-full uppercase">Vitamina C</span>
                            </div>
                         </div>
                      </div>
                   </div>
                </div>
 
-               <div className="flex flex-col gap-4 pb-12">
+               <div className="flex flex-col gap-3 pb-10">
                   <div className="flex justify-between items-center mb-1">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                        <Sun size={16} className="text-primary" />
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                        <Sun size={14} className="text-primary" />
                       </div>
-                      <h4 className="font-bold">Almoço</h4>
+                      <h4 className="font-bold text-sm">Almoço</h4>
                     </div>
-                    <span className="text-primary font-bold text-sm">620 kcal</span>
+                    <span className="text-primary font-bold text-xs">620 kcal</span>
                   </div>
                   
-                  <div className="bg-card-bg border border-gray-800 rounded-3xl overflow-hidden group">
+                  <div className="bg-card-bg border border-gray-800 rounded-2xl overflow-hidden group">
                      <img 
                       src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop" 
-                      className="w-full h-40 object-cover" 
+                      className="w-full h-32 object-cover" 
                       alt="Mufete"
                     />
                      <div className="p-4">
-                        <h5 className="font-bold text-base mb-1">Mufete Completo</h5>
-                        <p className="text-xs text-gray-500 leading-relaxed mb-4">Peixe grelhado (tilápia ou cacusso), funge de milho, feijão de óleo de palma e banana da terra. O prato mais nutritivo de Angola!</p>
-                        <div className="flex flex-wrap gap-2 mb-4">
+                        <h5 className="font-bold text-sm mb-1">Mufete Completo</h5>
+                        <p className="text-[10px] text-gray-500 leading-relaxed mb-3">Peixe grelhado (tilápia ou cacusso), funge de milho, feijão de óleo de palma e banana da terra. O prato mais nutritivo de Angola!</p>
+                        <div className="flex flex-wrap gap-1.5 mb-3">
                           {['Proteína', 'Ferro', 'Energia', 'Tradicional'].map(tag => (
-                             <span key={tag} className="px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold rounded-full">
+                             <span key={tag} className="px-2 py-0.5 bg-primary/10 border border-primary/20 text-primary text-[9px] font-bold rounded-full">
                                {tag}
                              </span>
                           ))}
@@ -1139,9 +1139,9 @@ export default function App() {
                               setLoading(false);
                             }
                           }}
-                          className="w-full py-3 bg-primary text-black font-bold rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+                          className="w-full py-2.5 bg-primary text-black font-bold rounded-xl flex items-center justify-center gap-2 text-xs shadow-lg shadow-primary/20 active:scale-95 transition-transform"
                         >
-                          <Check size={16} /> {loading ? 'A adicionar...' : 'Adicionar ao diário'}
+                          <Check size={14} /> {loading ? 'A adicionar...' : 'Adicionar ao diário'}
                         </button>
                      </div>
                   </div>
@@ -1319,21 +1319,21 @@ export default function App() {
             exit={{ opacity: 0, x: -20 }}
             className="flex flex-col h-screen"
           >
-            <div className="pt-12 px-8 mb-4">
+            <div className="pt-10 px-6 mb-3">
                <div className="flex items-center justify-between">
                   <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-2">
-                       Chat IA <Sparkles className="text-primary fill-primary" size={24} />
+                    <h1 className="text-2xl font-bold flex items-center gap-2">
+                       Chat IA <Sparkles className="text-primary fill-primary" size={20} />
                     </h1>
-                    <p className="text-gray-500 text-sm italic">O teu assistente de nutrição 🇦🇴</p>
+                    <p className="text-gray-500 text-xs italic">O teu assistente de nutrição 🇦🇴</p>
                   </div>
-                  <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20">
-                     <div className="text-primary font-bold">KN</div>
+                  <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/20">
+                     <div className="text-primary font-bold text-xs">KN</div>
                   </div>
                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 space-y-4 py-4 scroll-smooth">
+            <div className="flex-1 overflow-y-auto px-5 space-y-3.5 py-3 scroll-smooth">
               {chatMessages.map((msg, idx) => (
                 <motion.div 
                   key={idx} 
@@ -1342,7 +1342,7 @@ export default function App() {
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div 
-                    className={`max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed ${
+                    className={`max-w-[85%] p-3.5 rounded-2xl text-[13px] leading-relaxed ${
                       msg.role === 'user' 
                         ? 'bg-primary text-black font-medium rounded-tr-none shadow-lg shadow-primary/10' 
                         : 'bg-card-bg border border-gray-800 text-white rounded-tl-none shadow-xl'
@@ -1354,15 +1354,15 @@ export default function App() {
               ))}
               {isChatLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-card-bg border border-gray-800 p-4 rounded-3xl rounded-tl-none flex items-center gap-2 text-gray-400 italic text-xs">
-                    <Loader2 size={14} className="animate-spin text-primary" /> Kidia está a pensar...
+                  <div className="bg-card-bg border border-gray-800 p-3.5 rounded-2xl rounded-tl-none flex items-center gap-2 text-gray-400 italic text-[11px]">
+                    <Loader2 size={12} className="animate-spin text-primary" /> Kidia está a pensar...
                   </div>
                 </div>
               )}
               <div ref={chatEndRef} />
             </div>
 
-            <div className="px-6 py-4 pb-28">
+            <div className="px-5 py-3 pb-24">
                <div className="relative group">
                   <input 
                     type="text" 
@@ -1370,14 +1370,14 @@ export default function App() {
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Pergunta sobre mufete, quizaca..."
-                    className="w-full bg-card-bg border border-gray-800 rounded-3xl px-6 py-4 pr-16 text-sm focus:border-primary outline-none transition-all shadow-2xl focus:ring-1 focus:ring-primary/20"
+                    className="w-full bg-card-bg border border-gray-800 rounded-2xl px-5 py-3 pr-14 text-xs focus:border-primary outline-none transition-all shadow-2xl focus:ring-1 focus:ring-primary/20"
                   />
                   <button 
                     onClick={handleSendMessage}
                     disabled={!chatInput.trim() || isChatLoading}
-                    className="absolute right-2 top-2 bottom-2 w-12 bg-primary rounded-2xl flex items-center justify-center text-black active:scale-95 transition-transform disabled:opacity-50 disabled:grayscale"
+                    className="absolute right-1.5 top-1.5 bottom-1.5 w-11 bg-primary rounded-xl flex items-center justify-center text-black active:scale-95 transition-transform disabled:opacity-50"
                   >
-                    <Send size={18} />
+                    <Send size={16} />
                   </button>
                </div>
             </div>
@@ -1393,73 +1393,63 @@ export default function App() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="flex flex-col h-screen pb-24 overflow-y-auto px-8 pt-12"
+            className="flex flex-col h-screen pb-24 overflow-y-auto px-6 pt-10"
           >
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-6">
               <button 
                 onClick={() => navigate('dashboard')}
-                className="w-10 h-10 bg-card-bg rounded-full flex items-center justify-center border border-gray-800"
+                className="w-9 h-9 bg-card-bg rounded-full flex items-center justify-center border border-gray-800"
               >
-                <ArrowLeft size={20} />
+                <ArrowLeft size={18} />
               </button>
-              <h1 className="text-xl font-bold font-display">O Meu Perfil</h1>
-              <div className="w-10" />
+              <h1 className="text-lg font-bold font-display">O Meu Perfil</h1>
+              <div className="w-9" />
             </div>
 
-            <div className="flex flex-col items-center mb-10">
-               <div className="relative mb-4">
-                  <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center text-4xl border-2 border-primary/40">
+            <div className="flex flex-col items-center mb-8">
+               <div className="relative mb-3">
+                  <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center text-3xl border border-primary/40">
                      {selectedProfile === 'me' ? '👦' : selectedProfile === 'child' ? '👶' : '👴'}
                   </div>
-                  <button className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-2 border-dark-bg text-black">
-                     <Camera size={14} />
+                  <button className="absolute bottom-0 right-0 w-7 h-7 bg-primary rounded-full flex items-center justify-center border-2 border-dark-bg text-black">
+                     <Camera size={12} />
                   </button>
                </div>
-               <h2 className="text-2xl font-bold mb-1">{userProfile?.name || 'Utilizador'}</h2>
-               <p className="text-gray-500 text-sm">{userEmail}</p>
+               <h2 className="text-xl font-bold mb-0.5">{userProfile?.name || 'Utilizador'}</h2>
+               <p className="text-gray-500 text-xs">{userEmail}</p>
             </div>
 
-            <div className="space-y-4 mb-10">
-               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Objectivos e Preferências</h3>
-               <div className="bg-card-bg border border-gray-800 rounded-3xl p-4 space-y-4">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                     <span className="text-sm">Objectivo</span>
-                     <span className="text-primary font-bold text-sm">Comer saudável</span>
+            <div className="space-y-4 mb-8">
+               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Objectivos</h3>
+               <div className="bg-card-bg border border-gray-800 rounded-2xl p-4 gap-3.5 flex flex-col">
+                  <div className="flex justify-between items-center">
+                     <span className="text-xs">Objectivo</span>
+                     <span className="text-primary font-bold text-xs">Comer saudável</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                     <span className="text-sm">Dieta</span>
-                     <span className="text-primary font-bold text-sm">Omnívora</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                     <span className="text-sm">Actividade</span>
-                     <span className="text-primary font-bold text-sm">Moderada</span>
+                  <div className="h-[1px] bg-gray-800 w-full" />
+                  <div className="flex justify-between items-center">
+                     <span className="text-xs">Actividade</span>
+                     <span className="text-primary font-bold text-xs">Moderada</span>
                   </div>
                </div>
             </div>
 
             <div className="space-y-4">
-               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Conta</h3>
-               <div className="bg-card-bg border border-gray-800 rounded-3xl overflow-hidden">
-                  <button className="w-full p-4 flex items-center justify-between border-b border-gray-800 hover:bg-white/5 transition-colors">
+               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Conta</h3>
+               <div className="bg-card-bg border border-gray-800 rounded-2xl overflow-hidden">
+                  <button className="w-full p-4 flex items-center justify-between border-b border-gray-800 hover:bg-white/5">
                      <div className="flex items-center gap-3">
-                        <User size={18} className="text-gray-400" />
-                        <span className="text-sm">Editar Perfil</span>
+                        <User size={16} className="text-gray-400" />
+                        <span className="text-xs">Editar Perfil</span>
                      </div>
-                     <ChevronRight size={16} className="text-gray-600" />
-                  </button>
-                  <button className="w-full p-4 flex items-center justify-between border-b border-gray-800 hover:bg-white/5 transition-colors">
-                     <div className="flex items-center gap-3">
-                        <Bell size={18} className="text-gray-400" />
-                        <span className="text-sm">Notificações</span>
-                     </div>
-                     <ChevronRight size={16} className="text-gray-600" />
+                     <ChevronRight size={14} className="text-gray-600" />
                   </button>
                   <button 
                     onClick={handleLogout}
                     className="w-full p-4 flex items-center gap-3 text-red-500 hover:bg-red-500/5 transition-colors"
                   >
-                     <Moon size={18} />
-                     <span className="text-sm font-bold">Terminar Sessão</span>
+                     <Moon size={16} />
+                     <span className="text-xs font-bold">Terminar Sessão</span>
                   </button>
                </div>
             </div>
@@ -1477,20 +1467,20 @@ export default function App() {
             exit={{ opacity: 0, x: -20 }}
             className="flex flex-col h-screen bg-dark-bg overflow-y-auto pb-32"
           >
-            <div className="px-8 pt-12 mb-6">
-              <div className="flex justify-between items-center mb-6">
+            <div className="px-6 pt-10 mb-5">
+              <div className="flex justify-between items-center mb-5">
                 <button 
                   onClick={() => navigate('dashboard')}
-                  className="w-10 h-10 bg-card-bg rounded-full flex items-center justify-center border border-gray-800"
+                  className="w-9 h-9 bg-card-bg rounded-full flex items-center justify-center border border-gray-800"
                 >
-                  <ArrowLeft size={20} />
+                  <ArrowLeft size={18} />
                 </button>
               </div>
-              <h1 className="text-3xl font-bold font-display mb-1">Analisar refeição</h1>
-              <p className="text-gray-500 text-sm">Fotografa o teu prato para uma análise completa</p>
+              <h1 className="text-2xl font-bold font-display mb-1">Analisar refeição</h1>
+              <p className="text-gray-500 text-xs">Fotografa o teu prato para análise</p>
             </div>
 
-            <div className="px-6 mb-8">
+            <div className="px-5 mb-6">
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -1499,28 +1489,25 @@ export default function App() {
                 capture="environment"
                 className="hidden" 
               />
-              <div className="relative h-64 rounded-[32px] overflow-hidden border border-gray-800">
+              <div className="relative h-48 rounded-2xl overflow-hidden border border-gray-800">
                 <img 
                   src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop" 
-                  className="w-full h-full object-cover opacity-60" 
+                  className="w-full h-full object-cover opacity-50" 
                   alt="Food background"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col items-center justify-center p-6 text-center">
-                  <div className="w-16 h-16 bg-primary/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 border border-primary/30">
-                    {loading ? <Loader2 size={32} className="text-primary animate-spin" /> : <Camera size={32} className="text-primary" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col items-center justify-center p-4 text-center">
+                  <div className="w-12 h-12 bg-primary/20 backdrop-blur-md rounded-full flex items-center justify-center mb-3 border border-primary/30">
+                    {loading ? <Loader2 size={24} className="text-primary animate-spin" /> : <Camera size={24} className="text-primary" />}
                   </div>
-                  <h3 className="text-xl font-bold font-display mb-1">{loading ? 'A analisar...' : 'Fotografa o teu prato'}</h3>
-                  <p className="text-xs text-gray-400 max-w-[200px]">
-                    {loading ? 'A nossa equipa está a identificar os nutrientes. Aguarda um momento.' : 'Aponta a câmara para a refeição e recebe a análise nutricional completa em segundos'}
-                  </p>
+                  <h3 className="text-lg font-bold font-display mb-1">{loading ? 'A analisar...' : 'Capturar Prato'}</h3>
                   
                   {!loading && (
-                    <div className="flex gap-3 mt-6">
+                    <div className="flex gap-2.5 mt-4">
                       <button 
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-full text-xs font-bold shadow-lg"
+                        className="flex items-center gap-2 px-3.5 py-1.5 bg-primary text-black rounded-full text-[10px] font-bold"
                       >
-                        <Camera size={14} /> Câmara
+                        <Camera size={12} /> Câmara
                       </button>
                       <button 
                         onClick={() => {
@@ -1529,9 +1516,9 @@ export default function App() {
                             fileInputRef.current.click();
                           }
                         }}
-                        className="flex items-center gap-2 px-4 py-2 bg-[#d97706] text-black rounded-full text-xs font-bold shadow-lg"
+                        className="flex items-center gap-2 px-3.5 py-1.5 bg-[#d97706] text-black rounded-full text-[10px] font-bold"
                       >
-                        <ImageIcon size={14} /> Galeria
+                        <ImageIcon size={12} /> Galeria
                       </button>
                     </div>
                   )}
@@ -1539,60 +1526,36 @@ export default function App() {
               </div>
             </div>
 
-            <div className="px-8 mb-8">
-              <h3 className="font-bold text-gray-400 text-xs mb-4 uppercase tracking-widest">Tipo de refeição</h3>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="px-6 mb-6">
+              <h3 className="font-bold text-gray-400 text-[10px] mb-3 uppercase tracking-widest">Tipo de refeição</h3>
+              <div className="grid grid-cols-2 gap-3">
                 {MEAL_TYPES.map((meal) => (
                   <button 
                     key={meal.id}
                     onClick={() => setSelectedMealType(meal.id)}
-                    className={`p-4 rounded-2xl border transition-all text-left ${
+                    className={`p-3 rounded-xl border transition-all text-left ${
                       selectedMealType === meal.id ? 'bg-primary/5 border-primary' : 'bg-card-bg border-gray-800'
                     }`}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                       <meal.icon size={18} className={selectedMealType === meal.id ? 'text-primary' : 'text-gray-500'} />
-                       {selectedMealType === meal.id && <Check size={14} className="text-primary bg-primary/10 rounded-full" />}
+                    <div className="flex justify-between items-start mb-1.5">
+                       <meal.icon size={16} className={selectedMealType === meal.id ? 'text-primary' : 'text-gray-500'} />
+                       {selectedMealType === meal.id && <Check size={12} className="text-primary bg-primary/10 rounded-full" />}
                     </div>
-                    <h4 className="font-bold text-sm">{meal.label}</h4>
-                    <p className="text-[10px] text-gray-400 mt-1">{meal.time}</p>
-                    <p className="text-[9px] text-gray-600 italic mt-1">Ex: {meal.ex}</p>
+                    <h4 className="font-bold text-xs">{meal.label}</h4>
+                    <p className="text-[9px] text-gray-500 mt-0.5">{meal.time}</p>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="px-8 mb-8">
-               <h3 className="font-bold text-gray-400 text-xs mb-4 uppercase tracking-widest">Como obter a melhor análise</h3>
-               <div className="space-y-3">
-                  {[
-                    "Boa iluminação melhora muito a precisão",
-                    "Enquadra todo o prato na foto",
-                    "Evita sombras ou reflexos",
-                    "Funciona com pratos angolanos e internacionais"
-                  ].map((tip, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <Check size={10} className="text-primary" />
-                      </div>
-                      <span className="text-xs text-gray-400">{tip}</span>
-                    </div>
-                  ))}
-               </div>
-            </div>
-
-            <div className="px-8 space-y-4">
+            <div className="px-6 space-y-3">
                <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={loading}
-                className="w-full py-4 bg-primary text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-transform disabled:opacity-50"
+                className="w-full py-3.5 bg-primary text-black font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform disabled:opacity-50"
                >
-                 {loading ? <Loader2 className="animate-spin" /> : <Camera size={20} />}
+                 {loading ? <Loader2 className="animate-spin text-black" size={18} /> : <Camera size={18} />}
                  {loading ? 'Analisando...' : 'Abrir câmara'}
-               </button>
-               <button className="w-full py-4 bg-gray-900 border border-primary/20 text-primary font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                 <FlaskConical size={18} />
-                 Identificar Produto Rapidamente
                </button>
             </div>
 
@@ -1608,61 +1571,57 @@ export default function App() {
             animate={{ opacity: 1 }}
             className="flex flex-col h-screen overflow-y-auto"
           >
-            <div className="px-6 pt-12 pb-6 flex items-center justify-between bg-dark-bg/80 backdrop-blur sticky top-0 z-20">
+            <div className="px-5 pt-10 pb-4 flex items-center justify-between bg-dark-bg/80 backdrop-blur sticky top-0 z-20">
               <button 
                 onClick={() => navigate('capture')}
-                className="w-10 h-10 bg-card-bg rounded-full flex items-center justify-center transition-colors hover:bg-gray-800"
+                className="w-9 h-9 bg-card-bg rounded-full flex items-center justify-center transition-colors hover:bg-gray-800"
               >
-                <ArrowLeft size={20} />
+                <ArrowLeft size={18} />
               </button>
-              <h2 className="text-xl font-bold font-display">Resultado da Análise</h2>
-              <div className="w-10" />
+              <h2 className="text-lg font-bold font-display">Análise Final</h2>
+              <div className="w-9" />
             </div>
 
-            <div className="px-6 pb-24">
-              <div className="relative rounded-3xl overflow-hidden mb-8 shadow-2xl">
+            <div className="px-5 pb-20">
+              <div className="relative rounded-2xl overflow-hidden mb-6 shadow-2xl">
                 <img 
                   src={analysisImageUrl || "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1000&auto=format&fit=crop"} 
                   alt="Result meal" 
-                  className="w-full aspect-square object-cover"
+                  className="w-full aspect-[4/3] object-cover"
                 />
-                <div className="absolute top-4 right-4 bg-primary/20 backdrop-blur-md border border-primary/30 px-3 py-1.5 rounded-full flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  <span className="text-xs font-bold text-primary">{analysisResult?.score || 0}% {analysisResult?.score_label || 'Saúde'}</span>
+                <div className="absolute top-3 right-3 bg-primary/20 backdrop-blur-md border border-primary/30 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                  <span className="text-[10px] font-bold text-primary">{analysisResult?.score || 0}% {analysisResult?.score_label || 'Saúde'}</span>
                 </div>
                 
-                <div className="absolute bottom-0 inset-x-0 p-8 bg-gradient-to-t from-black/90 to-transparent flex flex-col items-center text-center">
-                   <h3 className="text-4xl font-bold font-display mb-1">{analysisResult?.item_name || 'Analisando'}</h3>
-                   <span className="text-primary font-bold text-2xl font-display">{analysisResult?.calories || 0} kcal</span>
+                <div className="absolute bottom-0 inset-x-0 p-5 bg-gradient-to-t from-black/90 to-transparent flex flex-col items-center text-center">
+                   <h3 className="text-2xl font-bold font-display mb-0.5">{analysisResult?.item_name || 'Analisando'}</h3>
+                   <span className="text-primary font-bold text-lg font-display">{analysisResult?.calories || 0} kcal</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-2 mb-10">
+              <div className="grid grid-cols-4 gap-2 mb-8">
                 {[
-                  { l: 'Protein', v: `${analysisResult?.protein || 0}g`, c: 'border-primary text-primary', i: Dumbbell },
-                  { l: 'Carbs', v: `${analysisResult?.carbs || 0}g`, c: 'border-orange-500 text-orange-500', i: Flame },
-                  { l: 'Fat', v: `${analysisResult?.fat || 0}g`, c: 'border-blue-500 text-blue-500', i: FlaskConical },
-                  { l: 'Fiber', v: `${analysisResult?.fiber || 0}g`, c: 'border-purple-500 text-purple-500', i: Bone },
+                  { l: 'Prot', v: `${analysisResult?.protein || 0}g` },
+                  { l: 'Carb', v: `${analysisResult?.carbs || 0}g` },
+                  { l: 'Gord', v: `${analysisResult?.fat || 0}g` },
+                  { l: 'Fibra', v: `${analysisResult?.fiber || 0}g` },
                 ].map((m) => (
-                  <div key={m.l} className={`p-3 rounded-2xl border bg-card-bg flex flex-col items-center text-center ${m.c.split(' ')[0]}`}>
-                    <div className="flex items-center gap-1 mb-2">
-                      <span className="text-[8px] font-bold uppercase tracking-tighter text-gray-400">{m.l}</span>
-                      <m.i size={10} className={m.c.split(' ')[1]} />
-                    </div>
-                    <span className="text-base font-bold font-display">{m.v}</span>
+                  <div key={m.l} className="p-2.5 rounded-xl border border-gray-800 bg-card-bg flex flex-col items-center text-center">
+                    <span className="text-[8px] font-bold uppercase text-gray-400 mb-1">{m.l}</span>
+                    <span className="text-sm font-bold font-display">{m.v}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-[#d97706]/10 border-2 border-[#d97706]/30 p-6 rounded-3xl mb-12 relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-1 h-full bg-[#d97706]" />
-                 <h4 className="text-[#d97706] font-bold text-lg mb-2">Sugestão do Nutricionista</h4>
-                 <p className="text-sm text-gray-300 leading-relaxed italic">
-                   "{analysisResult?.recommendation || 'Carregando conselho...'}"
+              <div className="bg-[#d97706]/10 border border-[#d97706]/30 p-5 rounded-2xl mb-8">
+                 <h4 className="text-[#d97706] font-bold text-sm mb-1.5">Dica Kidia</h4>
+                 <p className="text-[11px] text-gray-300 leading-relaxed italic">
+                   "{analysisResult?.recommendation || 'Processando recomendação...'}"
                  </p>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                  <button 
                   onClick={async () => {
                     if (!session || !analysisResult || !analysisImageUrl) return;
@@ -1672,20 +1631,20 @@ export default function App() {
                       await fetchUserData(session.user.id);
                       navigate('dashboard');
                     } catch (err: any) {
-                      setErrorMessage('Erro ao guardar: ' + err.message);
+                      setErrorMessage('Erro: ' + err.message);
                     } finally {
                       setLoading(false);
                     }
                   }}
                   disabled={loading}
-                  className="flex-1 py-4 bg-primary text-black font-extrabold rounded-full active:scale-95 transition-transform flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                  className="flex-1 py-3 bg-primary text-black font-extrabold rounded-xl active:scale-95 flex items-center justify-center gap-2 shadow-lg"
                 >
-                   {loading ? <Loader2 className="animate-spin" /> : <Check size={20} />}
-                   {loading ? 'A guardar...' : 'Adicionar ao Diário'}
+                   {loading ? <Loader2 className="animate-spin text-black" size={16} /> : <Check size={16} />}
+                   {loading ? 'A guardar...' : 'Adicionar'}
                  </button>
                  <button 
                   onClick={() => navigate('dashboard')}
-                  className="flex-1 py-4 bg-transparent border-2 border-primary text-primary font-bold rounded-full active:scale-95 transition-transform"
+                  className="flex-1 py-3 bg-transparent border border-primary/40 text-primary font-bold rounded-xl active:scale-95 transition-transform text-sm"
                 >
                    Sair
                  </button>

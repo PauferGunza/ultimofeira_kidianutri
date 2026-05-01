@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,20 +44,18 @@ app.post('/api/chat', async (req, res) => {
       return res.status(500).json({ error: 'GEMINI_API_KEY não configurada na Vercel. Por favor, adiciona-a nas configurações do projeto.' });
     }
 
-    const systemPrompt = `Tu és o Kidia Nutri AI, um assistente virtual de nutrição especializado na saúde e culinária de Angola. 
+    const systemInstruction = `Tu és o Kidia Nutri AI, um assistente virtual de nutrição especializado na saúde e culinária de Angola. 
     REGRAS: Sê extremamente direto, conciso e prático. Responde em poucas palavras sempre que possível, focando em ingredientes locais de Angola. Sem textos longos ou enrolação.`;
 
-    const contents = [
-      { role: 'user', parts: [{ text: systemPrompt }] },
-      ...messages.map((m: any) => ({
-        role: m.role,
-        parts: [{ text: m.content }]
-      }))
-    ];
-
     const result = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents
+      model: "gemini-3-flash-preview",
+      contents: messages.map((m: any) => ({
+        role: m.role === 'model' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      })),
+      config: {
+        systemInstruction
+      }
     });
     
     res.json({ text: result.text });
@@ -77,26 +75,41 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(500).json({ error: 'GEMINI_API_KEY não configurada na Vercel.' });
     }
 
-    const prompt = `Analise esta imagem de uma refeição e forneça os detalhes nutricionais em formato JSON. 
-    Seja o mais preciso possível para um guia de saúde em Angola.
-    Retorne um objeto com os campos: item_name (texto), calories (número), protein (número em g), carbs (número em g), fat (número em g), fiber (número em g), score (0-100), score_label (ex: Saudável, Moderado, Atenção), recommendation (uma frase curta de conselho).`;
+    const systemInstruction = `Analise esta imagem de uma refeição e forneça os detalhes nutricionais. 
+    Seja o mais preciso possível para um guia de saúde em Angola.`;
+
+    const responseSchema = {
+      type: Type.OBJECT,
+      properties: {
+        item_name: { type: Type.STRING, description: "Nome do item identificado" },
+        calories: { type: Type.NUMBER, description: "Calorias estimadas" },
+        protein: { type: Type.NUMBER, description: "Proteína em gramas" },
+        carbs: { type: Type.NUMBER, description: "Carboidratos em gramas" },
+        fat: { type: Type.NUMBER, description: "Gordura em gramas" },
+        fiber: { type: Type.NUMBER, description: "Fibra em gramas" },
+        score: { type: Type.NUMBER, description: "Pontuação de 0 a 100" },
+        score_label: { type: Type.STRING, description: "Rótulo da pontuação (Saudável, Moderado, Atenção)" },
+        recommendation: { type: Type.STRING, description: "Uma frase curta de conselho" }
+      },
+      required: ["item_name", "calories", "protein", "carbs", "fat", "fiber", "score", "score_label", "recommendation"]
+    };
 
     const result = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-3-flash-preview",
       contents: [{
         parts: [
-          { text: prompt },
-          { inlineData: { mimeType: 'image/jpeg', data: base64Image } }
+          { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
+          { text: "Analise esta imagem nutricionalmente. Retorne em JSON." }
         ]
       }],
       config: {
-        responseMimeType: "application/json"
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema
       }
     });
 
-    const responseText = result.text;
-    const cleanedJson = responseText.replace(/```json|```/g, '').trim();
-    res.json(JSON.parse(cleanedJson));
+    res.json(JSON.parse(result.text));
   } catch (error: any) {
     console.error('Erro na análise IA:', error);
     res.status(500).json({ error: error.message || 'Erro ao analisar imagem no servidor' });

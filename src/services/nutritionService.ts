@@ -26,26 +26,41 @@ export const analyzeImage = async (base64Image: string): Promise<NutritionAnalys
     const key = process.env.GEMINI_API_KEY || (process.env as any).KEY_API || '';
     const ai = new GoogleGenAI({ apiKey: key });
     
-    const prompt = `Analise esta imagem de uma refeição e forneça os detalhes nutricionais em formato JSON. 
-    Seja o mais preciso possível para um guia de saúde em Angola.
-    Retorne um objeto com os campos: item_name (texto), calories (número), protein (número em g), carbs (número em g), fat (número em g), fiber (número em g), score (0-100), score_label (ex: Saudável, Moderado, Atenção), recommendation (uma frase curta de conselho).`;
+    const systemInstruction = `Analise esta imagem de uma refeição e forneça os detalhes nutricionais. 
+    Seja o mais preciso possível para um guia de saúde em Angola.`;
+
+    const responseSchema = {
+      type: Type.OBJECT,
+      properties: {
+        item_name: { type: Type.STRING, description: "Nome do item identificado" },
+        calories: { type: Type.NUMBER, description: "Calorias estimadas" },
+        protein: { type: Type.NUMBER, description: "Proteína em gramas" },
+        carbs: { type: Type.NUMBER, description: "Carboidratos em gramas" },
+        fat: { type: Type.NUMBER, description: "Gordura em gramas" },
+        fiber: { type: Type.NUMBER, description: "Fibra em gramas" },
+        score: { type: Type.NUMBER, description: "Pontuação de 0 a 100" },
+        score_label: { type: Type.STRING, description: "Rótulo da pontuação (Saudável, Moderado, Atenção)" },
+        recommendation: { type: Type.STRING, description: "Uma frase curta de conselho" }
+      },
+      required: ["item_name", "calories", "protein", "carbs", "fat", "fiber", "score", "score_label", "recommendation"]
+    };
 
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-3-flash-preview",
       contents: [{
         parts: [
-          { text: prompt },
-          { inlineData: { mimeType: "image/jpeg", data: base64Image } }
+          { inlineData: { mimeType: "image/jpeg", data: base64Image } },
+          { text: "Analise esta imagem nutricionalmente. Retorne em JSON." }
         ]
       }],
       config: {
-        responseMimeType: "application/json"
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema
       }
     });
 
-    const resultText = response.text;
-    const cleanedJson = resultText.replace(/```json|```/g, '').trim();
-    return JSON.parse(cleanedJson);
+    return JSON.parse(response.text);
   } else {
     // Production (Vercel): Use secure backend route
     const response = await fetch('/api/analyze', {

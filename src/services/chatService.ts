@@ -16,8 +16,7 @@ export const sendMessageToAI = async (messages: ChatMessage[]): Promise<string> 
     const key = process.env.GEMINI_API_KEY || (process.env as any).KEY_API || '';
     const ai = new GoogleGenAI({ apiKey: key });
     
-    // System instruction to guide the AI as a nutrition assistant in Angola
-    const systemPrompt = `Tu és o Kidia Nutri AI, um assistente virtual de nutrição especializado na saúde e culinária de Angola. 
+    const systemInstruction = `Tu és o Kidia Nutri AI, um assistente virtual de nutrição especializado na saúde e culinária de Angola. 
     O teu objetivo é ajudar os angolanos a comerem de forma mais saudável.
     REGRAS DE RESPOSTA:
     1. Sê EXTREMAMENTE conciso e direto.
@@ -26,17 +25,15 @@ export const sendMessageToAI = async (messages: ChatMessage[]): Promise<string> 
     4. Se for uma pergunta simples, responde com apenas uma ou duas frases.
     5. Nunca gastes espaço desnecessário com texto decorativo.`;
 
-    const contents = [
-      { role: 'user', parts: [{ text: systemPrompt }] },
-      ...messages.map(m => ({
-        role: m.role,
-        parts: [{ text: m.content }]
-      }))
-    ];
-
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents
+      model: "gemini-3-flash-preview",
+      contents: messages.map(m => ({
+        role: m.role === 'model' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      })),
+      config: {
+        systemInstruction
+      }
     });
 
     return response.text;
