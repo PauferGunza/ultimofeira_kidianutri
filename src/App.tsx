@@ -6,8 +6,13 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
-import { uploadAndAnalyze, saveMealToHistory } from './services/nutritionService';
-import { NutritionAnalysis, sendMessageToAI, ChatMessage } from './services/geminiService';
+import { 
+  ScanResult as NutritionAnalysis, 
+  sendMessageToAI, 
+  ChatMessage,
+  uploadAndAnalyze,
+  saveMealToHistory
+} from './services/geminiService';
 import { 
   ChevronRight, 
   Flame, 
@@ -1143,7 +1148,7 @@ export default function App() {
                             if (!session) return;
                             setLoading(true);
                             try {
-                              const planMeal = {
+                              const planMeal: NutritionAnalysis = {
                                 itemName: "Mufete Completo",
                                 isFood: true,
                                 calories: "620 kcal",
