@@ -6,7 +6,8 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
-import { uploadAndAnalyze, saveMealToHistory, NutritionAnalysis } from './services/nutritionService';
+import { uploadAndAnalyze, saveMealToHistory } from './services/nutritionService';
+import { NutritionAnalysis, sendMessageToAI, ChatMessage } from './services/geminiService';
 import { 
   ChevronRight, 
   Flame, 
@@ -31,7 +32,6 @@ import {
   Sparkles,
   Mic
 } from 'lucide-react';
-import { sendMessageToAI, ChatMessage } from './services/chatService';
 
 // --- Types ---
 type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'capture' | 'result' | 'login' | 'signup' | 'terms' | 'privacy' | 'mealPlan' | 'community' | 'history' | 'profile_settings' | 'chat';
