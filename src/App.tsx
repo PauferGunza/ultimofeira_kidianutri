@@ -3,43 +3,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, FormEvent, useRef } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
 import { 
-  ScanResult as NutritionAnalysis, 
-  sendMessageToAI, 
-  ChatMessage,
-  uploadAndAnalyze,
-  saveMealToHistory
-} from './services/geminiService';
-import { 
-  ChevronRight, 
-  Flame, 
-  Camera, 
   History, 
   Calendar, 
   User, 
   Bell, 
   Check, 
   ArrowLeft,
-  Image as ImageIcon,
   Sun,
   Moon,
   Coffee,
   Lightbulb,
-  FlaskConical,
-  Dumbbell,
-  Bone,
+  Flame,
+  ChevronRight,
   Loader2,
-  MessageSquare,
-  Send,
-  Sparkles,
-  Mic
+  Camera,
+  Sparkles
 } from 'lucide-react';
 
+import { NutriAIView } from './views/NutriAIView';
+
 // --- Types ---
-type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'capture' | 'result' | 'login' | 'signup' | 'terms' | 'privacy' | 'mealPlan' | 'community' | 'history' | 'profile_settings' | 'chat';
+type Screen = 'welcome' | 'onboarding' | 'profile' | 'dashboard' | 'login' | 'signup' | 'terms' | 'privacy' | 'mealPlan' | 'community' | 'history' | 'profile_settings' | 'nutriai';
 
 interface Profile {
   id: string;
@@ -57,16 +45,10 @@ const ONBOARDING_STEPS = [
     tagColor: "text-[#d97706] bg-[#d97706]/20 border-[#d97706]/30"
   },
   {
-    title: "Fotografa qualquer refeição",
-    desc: "Usa a câmara ou galeria para analisar pratos angolanos e internacionais. A nossa equipa identifica os ingredientes e os nutrientes de forma instantânea.",
-    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1000&auto=format&fit=crop",
-    icon: Camera
-  },
-  {
-    title: "Análise nutricional completa",
-    desc: "Recebe calorias, proteínas, ferro, vitaminas e minerais. Sabe se o prato é bom contra a anemia, se é adequado para diabetes ou hipertensão.",
+    title: "Acompanha a tua alimentação",
+    desc: "Regista o que consomes e mantém um histórico completo dos teus nutrientes de forma simples e organizada.",
     image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1000&auto=format&fit=crop",
-    icon: Flame
+    icon: Calendar
   },
   {
     title: "Plano alimentar personalizado",
@@ -116,14 +98,6 @@ const BottomNav = ({ active, onNavigate }: { active: string, onNavigate: (screen
       </div>
       <span className="text-[10px]">Histórico</span>
     </button>
-    <div className="relative -mt-12">
-      <button 
-        onClick={() => onNavigate('capture')}
-        className="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/20 border-4 border-[#0a0c10] active:scale-90 transition-transform"
-      >
-        <Camera size={28} className="text-black" />
-      </button>
-    </div>
     <button onClick={() => onNavigate('mealPlan')} className={`flex flex-col items-center gap-1 ${active === 'mealPlan' ? 'text-primary' : 'text-gray-500'}`}>
       <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active === 'mealPlan' ? 'bg-primary/20' : ''}`}>
         <Calendar size={20} className={active === 'mealPlan' ? 'text-primary' : 'text-gray-500'} />
@@ -135,12 +109,6 @@ const BottomNav = ({ active, onNavigate }: { active: string, onNavigate: (screen
         <User size={20} className={active === 'community' ? 'text-primary' : 'text-gray-500'} />
       </div>
       <span className="text-[10px]">Povo</span>
-    </button>
-    <button onClick={() => onNavigate('chat')} className={`flex flex-col items-center gap-1 ${active === 'chat' ? 'text-primary' : 'text-gray-500'}`}>
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active === 'chat' ? 'bg-primary/20' : ''}`}>
-        <MessageSquare size={20} className={active === 'chat' ? 'text-primary' : 'text-gray-500'} />
-      </div>
-      <span className="text-[10px]">Chat IA</span>
     </button>
   </div>
 );
@@ -158,67 +126,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<NutritionAnalysis | null>(null);
-  const [analysisImageUrl, setAnalysisImageUrl] = useState<string | null>(null);
   const [selectedMealType, setSelectedMealType] = useState('lunch');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Chat states
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { role: 'model', content: 'Olá! Sou o Kidia Nutri AI. Como posso ajudar na tua alimentação hoje?' }
-  ]);
-  const [chatInput, setChatInput] = useState('');
-  const [isChatLoading, setIsChatLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const [isListening, setIsListening] = useState(false);
-
-  const toggleListening = () => {
-    // Basic UI simulation for voice if browser allows or just for feel
-    setIsListening(!isListening);
-    if (!isListening) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'pt-PT';
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          setChatInput(prev => prev + (prev ? ' ' : '') + transcript);
-          setIsListening(false);
-        };
-        recognition.onerror = () => setIsListening(false);
-        recognition.onend = () => setIsListening(false);
-        recognition.start();
-      } else {
-        setTimeout(() => setIsListening(false), 2000); // UI fallback
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (screen === 'chat') {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatMessages, screen]);
-
-  const handleSendMessage = async () => {
-    if (!chatInput.trim() || isChatLoading) return;
-
-    const userMessage: ChatMessage = { role: 'user', content: chatInput };
-    const newMessages = [...chatMessages, userMessage];
-    setChatMessages(newMessages);
-    setChatInput('');
-    setIsChatLoading(true);
-
-    try {
-      const response = await sendMessageToAI(newMessages, userProfile);
-      setChatMessages(prev => [...prev, { role: 'model', content: response }]);
-    } catch (err: any) {
-      console.error('Chat error:', err);
-      setChatMessages(prev => [...prev, { role: 'model', content: 'Desculpa, tive um problema ao processar a tua mensagem. Tenta novamente.' }]);
-    } finally {
-      setIsChatLoading(false);
-    }
-  };
 
   // Form states
   const [email, setEmail] = useState('');
@@ -283,27 +191,6 @@ export default function App() {
   const navigate = (next: Screen) => {
     setErrorMessage('');
     setScreen(next);
-  };
-
-  const handleFileSelect = async (e: any) => {
-    const file = e.target.files?.[0];
-    if (!file || !session) return;
-
-    setLoading(true);
-    setErrorMessage('');
-    
-    try {
-      const { analysis, imageUrl } = await uploadAndAnalyze(file, session.user.id, userProfile);
-      setAnalysisResult(analysis);
-      setAnalysisImageUrl(imageUrl);
-      await fetchUserData(session.user.id); // Refresh dashboard stats
-      navigate('result');
-    } catch (err: any) {
-      console.error('Analysis error:', err);
-      setErrorMessage(`Erro na análise: ${err.message}. Verifica se o bucket 'meals' existe no Supabase.`);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleSignUp = async (e: FormEvent) => {
@@ -428,7 +315,7 @@ export default function App() {
                 </div>
                 <h1 className="text-4xl font-bold font-display mb-3 text-white">Kidia Nutri</h1>
                 <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-[90%]">
-                  O teu guia nutricional pessoal. Fotografa qualquer prato e descobre tudo sobre a tua alimentação.
+                  O teu guia nutricional pessoal. Regista as tuas refeições e descobre tudo sobre a tua alimentação.
                 </p>
               </div>
 
@@ -712,7 +599,7 @@ export default function App() {
             <div className="prose prose-invert max-w-none text-gray-400 text-sm space-y-6 pb-12">
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">1. Aceitação dos Termos</h3>
-                <p>Ao utilizar o Kidia Nutri, você concorda em cumprir e ficar vinculado a estes termos. O Kidia Nutri é um guia nutricional baseado em IA e não substitui o aconselhamento médico profissional.</p>
+                <p>Ao utilizar o Kidia Nutri, você concorda em cumprir e ficar vinculado a estes termos. O Kidia Nutri é um guia nutricional e não substitui o aconselhamento médico profissional.</p>
               </section>
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">2. Uso do Serviço</h3>
@@ -720,7 +607,7 @@ export default function App() {
               </section>
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">3. Limitação de Responsabilidade</h3>
-                <p>As análises nutricionais são estimativas geradas por inteligência artificial. Sempre consulte um nutricionista ou médico antes de fazer mudanças significativas em sua dieta.</p>
+                <p>As análises nutricionais são estimativas informativas. Sempre consulte um nutricionista ou médico antes de fazer mudanças significativas em sua dieta.</p>
               </section>
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">4. Propriedade Intelectual</h3>
@@ -747,11 +634,11 @@ export default function App() {
             <div className="prose prose-invert max-w-none text-gray-400 text-sm space-y-6 pb-12">
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">1. Coleta de Dados</h3>
-                <p>Coletamos seu nome, e-mail e fotos de refeições para processar a análise nutricional. Para personalizar o serviço, também coletamos dados de perfil como idade e objetivos.</p>
+                <p>Coletamos seu nome e e-mail para personalizar o serviço e coletamos dados de perfil como idade e objetivos.</p>
               </section>
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">2. Uso de Imagens</h3>
-                <p>As fotos dos pratos são processadas pela nossa IA para identificar alimentos e não são compartilhadas com terceiros fora do escopo funcional do serviço.</p>
+                <p>Os dados das tuas refeições são processados para identificar padrões alimentares e não são compartilhadas com terceiros fora do escopo funcional do serviço.</p>
               </section>
               <section>
                 <h3 className="text-white font-bold text-lg mb-2">3. Segurança</h3>
@@ -933,23 +820,7 @@ export default function App() {
               </div>
             </section>
 
-            <button 
-              onClick={() => navigate('capture')}
-              className="bg-primary p-5 rounded-2xl flex items-center justify-between mb-6 active:scale-95 transition-transform"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center">
-                  <Camera size={24} className="text-black" />
-                </div>
-                <div className="text-left">
-                  <h4 className="text-black font-bold text-base leading-tight">Consultar Análise IA</h4>
-                  <p className="text-black/60 text-xs leading-snug max-w-[170px]">Fotografa a tua refeição e recebe a análise instantânea</p>
-                </div>
-              </div>
-              <ChevronRight className="text-black" size={18} />
-            </button>
-
-            <section className="bg-card-bg p-6 rounded-3xl border border-gray-800 relative z-0">
+            <section className="bg-card-bg p-6 rounded-3xl border border-gray-800 relative z-0 mb-6">
                <div className="absolute -top-3 -left-3">
                   <div className="w-10 h-10 bg-[#d97706]/20 border border-[#d97706]/30 rounded-full flex items-center justify-center">
                     <Lightbulb size={20} className="text-[#d97706]" />
@@ -960,6 +831,22 @@ export default function App() {
                  "As folhas de mandioca (saka-saka) são riquíssimas em ferro e cálcio. Um superfood local essencial para atingir as tuas metas."
                </p>
             </section>
+
+            <button 
+              onClick={() => navigate('nutriai')}
+              className="w-full bg-primary/10 border border-primary/20 p-5 rounded-3xl flex items-center justify-between mb-8 active:scale-[0.98] transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
+                  <Sparkles className="text-primary" size={24} />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-primary font-bold text-base leading-tight">Chat NutriAI</h4>
+                  <p className="text-gray-400 text-[10px] mt-1">Perguntas sobre dieta e saúde local</p>
+                </div>
+              </div>
+              <ChevronRight className="text-primary" size={18} />
+            </button>
 
             <BottomNav active="dashboard" onNavigate={navigate} />
           </motion.div>
@@ -975,30 +862,15 @@ export default function App() {
           >
             <div className="px-6 pt-10 mb-6">
               <h1 className="text-2xl font-bold font-display mb-1">Histórico</h1>
-              <p className="text-gray-500 text-xs">Tuas análises nutricionais passadas</p>
+              <p className="text-gray-500 text-xs">Teu histórico de refeições completo</p>
             </div>
 
             <div className="px-5 space-y-3">
               {scansToday.length > 0 ? (
                 scansToday.map((scan) => (
-                  <button 
+                  <div 
                     key={scan.id} 
-                    onClick={() => {
-                      setAnalysisResult({
-                        itemName: scan.item_name,
-                        isFood: true,
-                        calories: scan.calories,
-                        glycemicImpact: scan.score_label,
-                        carbs: scan.carbs,
-                        sodium: scan.metadata?.sodium || 'N/A',
-                        vitamins: scan.metadata?.vitamins || 'N/A',
-                        kidiaAdvice: scan.recommendation,
-                        safetyAlert: scan.metadata?.safetyAlert || ''
-                      });
-                      setAnalysisImageUrl(scan.image_url);
-                      navigate('result');
-                    }}
-                    className="w-full bg-card-bg border border-gray-800 p-3 rounded-2xl flex items-center gap-3 text-left active:scale-95 transition-transform"
+                    className="w-full bg-card-bg border border-gray-800 p-3 rounded-2xl flex items-center gap-3 text-left"
                   >
                     <img 
                       src={scan.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop"} 
@@ -1008,7 +880,6 @@ export default function App() {
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <h4 className="font-bold text-xs mb-0.5">{scan.item_name}</h4>
-                        <ChevronRight size={12} className="text-gray-600" />
                       </div>
                       <p className="text-[9px] text-gray-500 mb-1">{new Date(scan.created_at || scan.date).toLocaleDateString()}</p>
                       <div className="flex items-center gap-2">
@@ -1019,7 +890,7 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-                  </button>
+                  </div>
                 ))
               ) : (
                 <div className="text-center py-20">
@@ -1148,18 +1019,22 @@ export default function App() {
                             if (!session) return;
                             setLoading(true);
                             try {
-                              const planMeal: NutritionAnalysis = {
-                                itemName: "Mufete Completo",
-                                isFood: true,
-                                calories: "620 kcal",
-                                glycemicImpact: "Médio",
-                                carbs: "65g",
-                                sodium: "320mg",
-                                vitamins: "A, B12, C",
-                                kidiaAdvice: "Excelente escolha tradicional e completa.",
-                                safetyAlert: ""
+                              const planMeal = {
+                                item_name: "Mufete Completo",
+                                calories: 620,
+                                carbs: 65,
+                                score_label: "Médio",
+                                recommendation: "Excelente escolha tradicional e completa.",
                               };
-                              await saveMealToHistory(session.user.id, planMeal, "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop");
+                              const { error } = await supabase.from('scan_history').insert([
+                                {
+                                  user_id: session.user.id,
+                                  date: new Date().toISOString().split('T')[0],
+                                  ...planMeal,
+                                  image_url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop"
+                                }
+                              ]);
+                              if (error) throw error;
                               await fetchUserData(session.user.id);
                               navigate('dashboard');
                             } catch (err: any) {
@@ -1339,90 +1214,6 @@ export default function App() {
           </motion.div>
         )}
 
-        {/* --- Chat Assistant Screen --- */}
-        {screen === 'chat' && (
-          <motion.div 
-            key="chat"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="flex flex-col h-screen"
-          >
-            <div className="pt-10 px-6 mb-3">
-               <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                       Chat IA <Sparkles className="text-primary fill-primary" size={20} />
-                    </h1>
-                    <p className="text-gray-500 text-xs italic">O teu assistente de nutrição 🇦🇴</p>
-                  </div>
-                  <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/20">
-                     <div className="text-primary font-bold text-xs">KN</div>
-                  </div>
-               </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-5 space-y-3.5 py-3 scroll-smooth">
-              {chatMessages.map((msg, idx) => (
-                <motion.div 
-                  key={idx} 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div 
-                    className={`max-w-[85%] p-3.5 rounded-2xl text-[13px] leading-relaxed ${
-                      msg.role === 'user' 
-                        ? 'bg-primary text-black font-medium rounded-tr-none shadow-lg shadow-primary/10' 
-                        : 'bg-card-bg border border-gray-800 text-white rounded-tl-none shadow-xl'
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
-                </motion.div>
-              ))}
-              {isChatLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-card-bg border border-gray-800 p-3.5 rounded-2xl rounded-tl-none flex items-center gap-2 text-gray-400 italic text-[11px]">
-                    <Loader2 size={12} className="animate-spin text-primary" /> Kidia está a pensar...
-                  </div>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            <div className="px-5 py-3 pb-24">
-               <div className="relative group flex items-center gap-2">
-                  <button 
-                    onClick={toggleListening}
-                    className={`shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-card-bg border border-gray-800 text-gray-400'}`}
-                  >
-                    <Mic size={18} />
-                  </button>
-                  <div className="relative flex-1">
-                    <input 
-                      type="text" 
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                      placeholder={isListening ? "A ouvir..." : "Pergunta sobre nutrição..."}
-                      className="w-full bg-card-bg border border-gray-800 rounded-2xl px-5 py-3 pr-14 text-xs focus:border-primary outline-none transition-all shadow-2xl focus:ring-1 focus:ring-primary/20"
-                    />
-                    <button 
-                      onClick={handleSendMessage}
-                      disabled={!chatInput.trim() || isChatLoading}
-                      className="absolute right-1.5 top-1.5 bottom-1.5 w-11 bg-primary rounded-xl flex items-center justify-center text-black active:scale-95 transition-transform disabled:opacity-50"
-                    >
-                      <Send size={16} />
-                    </button>
-                  </div>
-               </div>
-            </div>
-            
-            <BottomNav active="chat" onNavigate={navigate} />
-          </motion.div>
-        )}
-
         {/* --- Profile Settings Screen --- */}
         {screen === 'profile_settings' && (
           <motion.div 
@@ -1495,209 +1286,10 @@ export default function App() {
           </motion.div>
         )}
 
-        {/* --- Analysis Capture Screen --- */}
-        {screen === 'capture' && (
-          <motion.div 
-            key="capture"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="flex flex-col h-screen bg-dark-bg overflow-y-auto pb-32"
-          >
-            <div className="px-6 pt-10 mb-5">
-              <div className="flex justify-between items-center mb-5">
-                <button 
-                  onClick={() => navigate('dashboard')}
-                  className="w-9 h-9 bg-card-bg rounded-full flex items-center justify-center border border-gray-800"
-                >
-                  <ArrowLeft size={18} />
-                </button>
-              </div>
-              <h1 className="text-2xl font-bold font-display mb-1">Analisar refeição</h1>
-              <p className="text-gray-500 text-xs">Fotografa o teu prato para análise</p>
-            </div>
-
-            <div className="px-5 mb-6">
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileSelect} 
-                accept="image/*" 
-                capture="environment"
-                className="hidden" 
-              />
-              <div className="relative h-48 rounded-2xl overflow-hidden border border-gray-800">
-                <img 
-                  src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop" 
-                  className="w-full h-full object-cover opacity-50" 
-                  alt="Food background"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col items-center justify-center p-4 text-center">
-                  <div className="w-12 h-12 bg-primary/20 backdrop-blur-md rounded-full flex items-center justify-center mb-3 border border-primary/30">
-                    {loading ? <Loader2 size={24} className="text-primary animate-spin" /> : <Camera size={24} className="text-primary" />}
-                  </div>
-                  <h3 className="text-lg font-bold font-display mb-1">{loading ? 'A analisar...' : 'Capturar Prato'}</h3>
-                  
-                  {!loading && (
-                    <div className="flex gap-2.5 mt-4">
-                      <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 px-3.5 py-1.5 bg-primary text-black rounded-full text-[10px] font-bold"
-                      >
-                        <Camera size={12} /> Câmara
-                      </button>
-                      <button 
-                        onClick={() => {
-                          if (fileInputRef.current) {
-                            fileInputRef.current.removeAttribute('capture');
-                            fileInputRef.current.click();
-                          }
-                        }}
-                        className="flex items-center gap-2 px-3.5 py-1.5 bg-[#d97706] text-black rounded-full text-[10px] font-bold"
-                      >
-                        <ImageIcon size={12} /> Galeria
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 mb-6">
-              <h3 className="font-bold text-gray-400 text-[10px] mb-3 uppercase tracking-widest">Tipo de refeição</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {MEAL_TYPES.map((meal) => (
-                  <button 
-                    key={meal.id}
-                    onClick={() => setSelectedMealType(meal.id)}
-                    className={`p-3 rounded-xl border transition-all text-left ${
-                      selectedMealType === meal.id ? 'bg-primary/5 border-primary' : 'bg-card-bg border-gray-800'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-1.5">
-                       <meal.icon size={16} className={selectedMealType === meal.id ? 'text-primary' : 'text-gray-500'} />
-                       {selectedMealType === meal.id && <Check size={12} className="text-primary bg-primary/10 rounded-full" />}
-                    </div>
-                    <h4 className="font-bold text-xs">{meal.label}</h4>
-                    <p className="text-[9px] text-gray-500 mt-0.5">{meal.time}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="px-6 space-y-3">
-               <button 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={loading}
-                className="w-full py-3.5 bg-primary text-black font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform disabled:opacity-50"
-               >
-                 {loading ? <Loader2 className="animate-spin text-black" size={18} /> : <Camera size={18} />}
-                 {loading ? 'Analisando...' : 'Abrir câmara'}
-               </button>
-            </div>
-
-            <BottomNav active="capture" onNavigate={navigate} />
-          </motion.div>
+        {/* --- NutriAI View --- */}
+        {screen === 'nutriai' && (
+          <NutriAIView onBack={() => navigate('dashboard')} />
         )}
-
-        {/* --- Analysis Result Screen --- */}
-        {screen === 'result' && (
-          <motion.div 
-            key="result"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col h-screen overflow-y-auto"
-          >
-            <div className="px-5 pt-10 pb-4 flex items-center justify-between bg-dark-bg/80 backdrop-blur sticky top-0 z-20">
-              <button 
-                onClick={() => navigate('capture')}
-                className="w-9 h-9 bg-card-bg rounded-full flex items-center justify-center transition-colors hover:bg-gray-800"
-              >
-                <ArrowLeft size={18} />
-              </button>
-              <h2 className="text-lg font-bold font-display">Análise Final</h2>
-              <div className="w-9" />
-            </div>
-
-            <div className="px-5 pb-20">
-              <div className="relative rounded-2xl overflow-hidden mb-6 shadow-2xl">
-                <img 
-                  src={analysisImageUrl || "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1000&auto=format&fit=crop"} 
-                  alt="Result meal" 
-                  className="w-full aspect-[4/3] object-cover"
-                />
-                <div className="absolute top-3 right-3 bg-primary/20 backdrop-blur-md border border-primary/30 px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                  <span className="text-[10px] font-bold text-primary">{analysisResult?.glycemicImpact || 'Saúde'}</span>
-                </div>
-                
-                <div className="absolute bottom-0 inset-x-0 p-5 bg-gradient-to-t from-black/90 to-transparent flex flex-col items-center text-center">
-                   <h3 className="text-2xl font-bold font-display mb-0.5">{analysisResult?.itemName || 'Analisando'}</h3>
-                   <span className="text-primary font-bold text-lg font-display">{analysisResult?.calories || 0}</span>
-                </div>
-              </div>
-
-              {analysisResult?.safetyAlert && (
-                <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl mb-6 flex items-start gap-3">
-                   <Bell className="text-red-500 shrink-0" size={18} />
-                   <p className="text-[11px] text-red-400 font-bold leading-relaxed">
-                     {analysisResult.safetyAlert}
-                   </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-3 gap-2 mb-8">
-                {[
-                  { l: 'Carb', v: analysisResult?.carbs || 'N/A' },
-                  { l: 'Sódio', v: analysisResult?.sodium || 'N/A' },
-                  { l: 'Vitaminas', v: analysisResult?.vitamins || 'N/A' },
-                ].map((m) => (
-                  <div key={m.l} className="p-2.5 rounded-xl border border-gray-800 bg-card-bg flex flex-col items-center text-center">
-                    <span className="text-[8px] font-bold uppercase text-gray-400 mb-1">{m.l}</span>
-                    <span className="text-[11px] font-bold font-display line-clamp-1">{m.v}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-[#d97706]/10 border border-[#d97706]/30 p-5 rounded-2xl mb-8">
-                 <h4 className="text-[#d97706] font-bold text-sm mb-1.5">Conselho da Kidia</h4>
-                 <p className="text-[11px] text-gray-300 leading-relaxed italic">
-                   "{analysisResult?.kidiaAdvice || 'Processando recomendação...'}"
-                 </p>
-              </div>
-
-              <div className="flex gap-3">
-                 <button 
-                  onClick={async () => {
-                    if (!session || !analysisResult || !analysisImageUrl) return;
-                    setLoading(true);
-                    try {
-                      await saveMealToHistory(session.user.id, analysisResult, analysisImageUrl);
-                      await fetchUserData(session.user.id);
-                      navigate('dashboard');
-                    } catch (err: any) {
-                      setErrorMessage('Erro: ' + err.message);
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  disabled={loading}
-                  className="flex-1 py-3 bg-primary text-black font-extrabold rounded-xl active:scale-95 flex items-center justify-center gap-2 shadow-lg"
-                >
-                   {loading ? <Loader2 className="animate-spin text-black" size={16} /> : <Check size={16} />}
-                   {loading ? 'A guardar...' : 'Adicionar'}
-                 </button>
-                 <button 
-                  onClick={() => navigate('dashboard')}
-                  className="flex-1 py-3 bg-transparent border border-primary/40 text-primary font-bold rounded-xl active:scale-95 transition-transform text-sm"
-                >
-                   Sair
-                 </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
       </AnimatePresence>
     </div>
   );
