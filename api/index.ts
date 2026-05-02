@@ -63,7 +63,7 @@ app.post('/api/chat', async (req, res) => {
       }
     });
     
-    res.json({ text: result.text });
+    res.json({ reply: result.text });
   } catch (error: any) {
     console.error('Erro no Chat IA:', error);
     res.status(500).json({ error: error.message || 'Erro no chat do servidor' });
@@ -72,8 +72,8 @@ app.post('/api/chat', async (req, res) => {
 
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { base64Image, profile } = req.body;
-    if (!base64Image) return res.status(400).json({ error: 'Falta a imagem' });
+    const { base64Data, mimeType, profile } = req.body;
+    if (!base64Data) return res.status(400).json({ error: 'Falta a imagem' });
 
     const ai = getAI();
     if (!ai) {
@@ -105,7 +105,7 @@ app.post('/api/analyze', async (req, res) => {
       model: "gemini-3-flash-preview",
       contents: [{
         parts: [
-          { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
+          { inlineData: { mimeType: mimeType || 'image/jpeg', data: base64Data } },
           { text: "Análise nutricional e botânica Kidia. Retorne em JSON." }
         ]
       }],

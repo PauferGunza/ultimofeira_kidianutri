@@ -3,6 +3,13 @@ import { UserProfile, ScanResult } from "../../types";
 export type { ScanResult };
 import { supabase } from "../lib/supabase";
 
+const isDev = typeof window !== 'undefined' && 
+              (window.location.hostname.includes('googleusercontent.com') || 
+               window.location.hostname.includes('run.app') ||
+               window.location.hostname === 'localhost' ||
+               window.location.hostname.includes('ais-') ||
+               window.location.hostname.includes('aisstudio'));
+
 const getApiKey = () => process.env.GEMINI_API_KEY || process.env.API_KEY || (process.env as any).KEY_API || '';
 
 // --- CHAT SERVICE ---
@@ -12,27 +19,39 @@ export interface ChatMessage {
 }
 
 export const sendMessageToAI = async (messages: ChatMessage[], profile: UserProfile): Promise<string> => {
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error("API Key is missing.");
+  if (isDev) {
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error("API Key is missing.");
 
-  const ai = new GoogleGenAI({ apiKey });
-  const systemInstruction = `Tu és o Kidia, um assistente virtual de saúde altamente profissional em Angola.
-    REGRAS CRÍTICAS DE ECONOMIA:
-    1. Responde com o MÍNIMO de palavras possível.
-    2. Proibido saudações, introduções ou "Como posso ajudar".
-    3. Foca apenas em factos técnicos e nutrição local.
-    4. Se uma palavra basta, não uses duas.
-    5. Perfil: ${profile?.name || 'Amigo'}, Diabético: ${profile?.diabetes ? 'Sim' : 'Não'}, Hipertenso: ${profile?.hypertension ? 'Sim' : 'Não'}, Peso: ${profile?.weightLoss ? 'Perder' : 'Manter'}.`;
+    const ai = new GoogleGenAI({ apiKey });
+    const systemInstruction = `Tu és o Kidia, um assistente virtual de saúde altamente profissional em Angola.
+      REGRAS CRÍTICAS DE ECONOMIA:
+      1. Responde com o MÍNIMO de palavras possível.
+      2. Proibido saudações, introduções ou "Como posso ajudar".
+      3. Foca apenas em factos técnicos e nutrição local.
+      4. Se uma palavra basta, não uses duas.
+      5. Perfil: ${profile?.name || 'Amigo'}, Diabético: ${profile?.diabetes ? 'Sim' : 'Não'}, Hipertenso: ${profile?.hypertension ? 'Sim' : 'Não'}, Peso: ${profile?.weightLoss ? 'Perder' : 'Manter'}.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: messages.map(m => ({
-      role: m.role,
-      parts: [{ text: m.content }]
-    })),
-    config: { systemInstruction }
-  });
-  return response.text;
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: messages.map(m => ({
+        role: m.role,
+        parts: [{ text: m.content }]
+      })),
+      config: { systemInstruction }
+    });
+    return response.text;
+  } else {
+    // Production (Vercel): Use backend API
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, profile })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data.reply;
+  }
 };
 
 // --- NUTRITION SERVICE ---
@@ -41,45 +60,38 @@ export const analyzeImage = async (
   mimeType: string,
   profile: UserProfile
 ): Promise<ScanResult> => {
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error("API Key is missing.");
+  if (isDev) {
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error("API Key is missing.");
 
-  const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey });
 
-  const systemInstruction = `Analisa esta foto de comida ou planta angolana. 
-    REGRA DE OURO: Conteúdo ultra-conciso. 
-    Kidia Advice deve ser apenas uma frase curta (máx 15 palavras).
-    Perfil: Diab: ${profile?.diabetes ? 'S' : 'N'}, Hiper: ${profile?.hypertension ? 'S' : 'N'}, Peso: ${profile?.weightLoss ? 'P' : 'M'}.`;
+    const systemInstruction = `Analisa esta foto de comida ou planta angolana. 
+      REGRA DE OURO: Conteúdo ultra-conciso. 
+      Kidia Advice deve ser apenas uma frase curta (máx 15 palavras).
+      Perfil: Diab: ${profile?.diabetes ? 'S' : 'N'}, Hiper: ${profile?.hypertension ? 'S' : 'N'}, Peso: ${profile?.weightLoss ? 'P' : 'M'}.`;
 
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      itemName: { type: Type.STRING, description: "Nome do item identificado" },
-      isFood: { type: Type.BOOLEAN, description: "Verdadeiro se for comida/prato, falso se for planta medicinal ou outro" },
-      calories: { type: Type.STRING, description: "Ex: '350 kcal' ou 'N/A'" },
-      glycemicImpact: { type: Type.STRING, description: "DEVE SER EXATAMENTE UM DESTES: 'Baixo', 'Médio', 'Alto', ou 'N/A'" },
-      carbs: { type: Type.STRING, description: "Ex: '45g' ou 'N/A'" },
-      sodium: { type: Type.STRING, description: "Ex: '150mg' ou 'N/A'" },
-      vitamins: { type: Type.STRING, description: "Principais vitaminas/minerais presentes" },
-      kidiaAdvice: { type: Type.STRING, description: "Conselho integrativo e cultural da Kidia" },
-      safetyAlert: { type: Type.STRING, description: "Aviso de segurança personalizado. Vazio se não houver perigo." }
-    },
-    required: ["itemName", "isFood", "calories", "glycemicImpact", "carbs", "sodium", "vitamins", "kidiaAdvice", "safetyAlert"]
-  };
+    const responseSchema = {
+      type: Type.OBJECT,
+      properties: {
+        itemName: { type: Type.STRING, description: "Nome do item identificado" },
+        isFood: { type: Type.BOOLEAN, description: "Verdadeiro se for comida/prato, falso se for planta medicinal ou outro" },
+        calories: { type: Type.STRING, description: "Ex: '350 kcal' ou 'N/A'" },
+        glycemicImpact: { type: Type.STRING, description: "DEVE SER EXATAMENTE UM DESTES: 'Baixo', 'Médio', 'Alto', ou 'N/A'" },
+        carbs: { type: Type.STRING, description: "Ex: '45g' ou 'N/A'" },
+        sodium: { type: Type.STRING, description: "Ex: '150mg' ou 'N/A'" },
+        vitamins: { type: Type.STRING, description: "Principais vitaminas/minerais presentes" },
+        kidiaAdvice: { type: Type.STRING, description: "Conselho integrativo e cultural da Kidia" },
+        safetyAlert: { type: Type.STRING, description: "Aviso de segurança personalizado. Vazio se não houver perigo." }
+      },
+      required: ["itemName", "isFood", "calories", "glycemicImpact", "carbs", "sodium", "vitamins", "kidiaAdvice", "safetyAlert"]
+    };
 
-  try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
-        {
-          inlineData: {
-            data: base64Data,
-            mimeType: mimeType,
-          },
-        },
-        {
-          text: "Análise nutricional e botânica Kidia. Retorne em JSON.",
-        },
+        { inlineData: { data: base64Data, mimeType } },
+        { text: "Análise nutricional e botânica Kidia. Retorne em JSON." }
       ],
       config: {
         systemInstruction,
@@ -89,11 +101,17 @@ export const analyzeImage = async (
       },
     });
 
-    const result = JSON.parse(response.text) as ScanResult;
-    return result;
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    throw new Error("Não foi possível analisar a imagem. Tente novamente.");
+    return JSON.parse(response.text) as ScanResult;
+  } else {
+    // Production (Vercel): Use backend API
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64Data, mimeType, profile })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data;
   }
 };
 
